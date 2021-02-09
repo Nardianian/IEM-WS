@@ -1,10 +1,8 @@
 #  WaveFieldSynthesizer 
 
-## Overview
-
 This audio plugin implements a wave-field synthesis for an arbitrary loudspeaker array. The wave-field synthesis parameters are controllable via GUI and via automation. The plugin is free and open-source.
 
-## Demovideo
+## Demo video
 
 [![Demonstrational video](Misc/WaveFieldSynthesizer_20210209.png)](https://www.youtube.com/watch?v=57Pwy940GIA&feature=youtu.be "WaveFieldSynthesizer")
 
@@ -52,7 +50,7 @@ Wave-field synthesis usually uses a lot of loudspeakers, which are normally not 
 
 One possible plugin is Matthias Kronlachner's [https://github.com/kronihias/mcfx](mcfx_convolver) (binaries available [here](http://www.matthiaskronlachner.com/?p=1910)). You can use any binaural rendering plugin though.
 
-Additionally you need impulse responses. You can find some for Binaural and for Ambisonics 1st order [under this link](http://soundaroundcloud.ddns.net:8000/index.php/s/JHfxkgpoxw8k5G5). The impulse responses were recorded using a linear 24 loudspeaker array and 5 different listener positions.
+Additionally you need impulse responses. You can find some for Binaural and for Ambisonics 1st order [under this link (link currently dead, will be fixed)](http://soundaroundcloud.ddns.net:8000/index.php/s/JHfxkgpoxw8k5G5). The impulse responses were recorded using a linear 24 loudspeaker array and 5 different listener positions.
 
 Additionally you may need a configuration file for the rendering plugin. In the [Misc directory](Misc/BinauralRoomImpulseResponsesPosition3.conf) you find one for binaural listening, recorded at the central listener position. Use it together with the *mcfx_convolver*.
 
