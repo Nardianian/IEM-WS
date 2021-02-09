@@ -1,0 +1,23 @@
+# EditorConfig file for WaveFieldSynthesizer plugin.
+# 2021-02-09, Lukas Maier
+
+root = true
+
+[*]
+indent_style = space
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Use 4 spaces for indentation in Markdown files
+
+[*.{cpp,h,md}]
+indent_size = 4
+
+[*.{yml,yaml}]
+indent_size = 2
+
+# Tab indentation (no size specified)
+[Makefile]
+indent_style = tab
