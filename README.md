@@ -65,7 +65,7 @@ For a comprehensive guide on modern wave field synthesis, see [Gergely Firtha's 
 ## Maintainers
 
 - [Lukas Maier](mailto:maier.lukas1995@gmail.com)
-- [Michael Reiter](michael.reiter94@gmail.com)
+- [Michael Reiter](mailto:michael.reiter94@gmail.com)
 
 ## Special thx to
 
