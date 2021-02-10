@@ -48,9 +48,9 @@ Wave-field synthesis usually uses a lot of loudspeakers, which are normally not 
 
 ### Binaural rendering plugin
 
-One possible plugin is Matthias Kronlachner's [https://github.com/kronihias/mcfx](mcfx_convolver) (binaries available [here](http://www.matthiaskronlachner.com/?p=1910)). You can use any binaural rendering plugin though.
+One possible plugin is Matthias Kronlachner's [mcfx_convolver](https://github.com/kronihias/mcfx) (binaries available [here](http://www.matthiaskronlachner.com/?p=1910)). You can use any binaural rendering plugin though.
 
-Additionally you need impulse responses. You can find some for Binaural and for Ambisonics 1st order [under this link (link currently dead, will be fixed)](http://soundaroundcloud.ddns.net:8000/index.php/s/JHfxkgpoxw8k5G5). The impulse responses were recorded using a linear 24 loudspeaker array and 5 different listener positions.
+Additionally you need impulse responses. You can find some for Binaural and for Ambisonics 1st order [under this link ](http://soundaroundcloud.ddns.net:8000/index.php/s/jgJEs5C5FNN9RWt). The impulse responses were recorded using a linear 24 loudspeaker array and 5 different listener positions.
 
 Additionally you may need a configuration file for the rendering plugin. In the [Misc directory](Misc/BinauralRoomImpulseResponsesPosition3.conf) you find one for binaural listening, recorded at the central listener position. Use it together with the *mcfx_convolver*.
 
@@ -61,3 +61,14 @@ If you build on Windows, a file path in the build process may become too long. V
 ## Related work
 
 For a comprehensive guide on modern wave field synthesis, see [Gergely Firtha's PhD thesis](https://repozitorium.omikk.bme.hu/bitstream/handle/10890/13177/tezis_eng.pdf?sequence=3&isAllowed=y).
+
+## Maintainers
+
+- [Lukas Maier](mailto:maier.lukas1995@gmail.com)
+- [Michael Reiter](michael.reiter94@gmail.com)
+
+## Special thx to
+
+- **Lukas Goelles**: For working on and prototyping the algorithm this plugin is based on.
+- **Franz Zotter**: For supervising and always providing useful input.
+
