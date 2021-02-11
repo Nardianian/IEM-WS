@@ -53,7 +53,7 @@ One possible plugin is Matthias Kronlachner's [mcfx_convolver](https://github.co
 Additionally you need impulse responses. You can find some for Binaural and for Ambisonics 1st order [under this link ](http://soundaroundcloud.ddns.net:8000/index.php/s/jgJEs5C5FNN9RWt). The impulse responses were recorded using a linear 24 loudspeaker array and 5 different listener positions.
 
 Additionally you need a configuration file for the rendering plugin. In the [Misc directory](Misc) you find one for each of the 5 recorded listening positions. Use it together with the *mcfx_convolver*. 
-In the GUI the listening position must be set to the recorded position. The Y-coordinate is the same for every position (-2m) whereas the x-coordinate should be set to (from position 1 to 5) -1.8m | -0.9m | 0.0m | 0.9m | 1.9m. For more details read the [dokucmentation on the binaural impulse responses](Misc/DokumentationBRIR.pdf).
+In the GUI the listening position must be set to the recorded position. The Y-coordinate is the same for every position (-2m) whereas the x-coordinate should be set to (from position 1 to 5) -1.8m | -0.9m | 0.0m | 0.9m | 1.9m. For more details read the [dokucmentation on the binaural impulse responses](Misc/DocumentationBRIR.pdf).
 
 ## Possible issues
 
