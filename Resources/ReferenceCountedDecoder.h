@@ -21,81 +21,77 @@
  */
 
 #pragma once
+#include "MaxRE.h"
 #include "ReferenceCountedMatrix.h"
 #include "ambisonicTools.h"
-#include "MaxRE.h"
 #include "inPhase.h"
 
 class ReferenceCountedDecoder : public ReferenceCountedMatrix
 {
 public:
-    typedef ReferenceCountedObjectPtr<ReferenceCountedDecoder> Ptr;
+    typedef juce::ReferenceCountedObjectPtr<ReferenceCountedDecoder> Ptr;
 
-    enum Normalization
+    enum class Normalization
     {
         n3d,
         sn3d
     };
 
-    enum Weights
+    enum class Weights
     {
         none,
         maxrE,
         inPhase
     };
 
-    struct Settings {
-        Normalization expectedNormalization = sn3d;
-        Weights weights = none;
+    struct Settings
+    {
+        Normalization expectedNormalization = Normalization::sn3d;
+        Weights weights = Weights::none;
         bool weightsAlreadyApplied = false;
         int subwooferChannel = -1;
     };
 
-
-    ReferenceCountedDecoder (const String& nameToUse, const String& descriptionToUse, int rows, int columns)
-    :   ReferenceCountedMatrix(nameToUse, descriptionToUse, rows, columns), order(isqrt(columns)-1)
-    {}
-
-    ~ReferenceCountedDecoder()
-    {}
-
-    virtual String getConstructorMessage() override
+    ReferenceCountedDecoder (const juce::String& nameToUse,
+                             const juce::String& descriptionToUse,
+                             int rows,
+                             int columns) :
+        ReferenceCountedMatrix (nameToUse, descriptionToUse, rows, columns),
+        order (isqrt (columns) - 1)
     {
-        return "Decoder named '" + name + "' constructed. Size: " + String(matrix.getNumRows()) + "x" + String(matrix.getNumColumns());
     }
 
-    virtual String getDeconstructorMessage() override
+    ~ReferenceCountedDecoder() override = default;
+
+    virtual juce::String getConstructorMessage() const override
+    {
+        return "Decoder named '" + name + "' constructed. Size: "
+               + juce::String (matrix.getNumRows()) + "x" + juce::String (matrix.getNumColumns());
+    }
+
+    virtual juce::String getDeconstructorMessage() const override
     {
         return "Decoder named '" + name + "' destroyed.";
     }
 
-    const String getName()
-    {
-        return name;
-    }
+    const juce::String getName() { return name; }
 
-    const String getDescription()
-    {
-        return description;
-    }
+    const juce::String getDescription() { return description; }
 
-    void setSettings (const Settings newSettings)
-    {
-        settings = newSettings;
-    }
+    void setSettings (const Settings newSettings) { settings = newSettings; }
 
-    const Settings getSettings()
-    {
-        return settings;
-    }
+    const Settings getSettings() { return settings; }
 
-    const String getWeightsString()
+    const juce::String getWeightsString() const
     {
-        switch(settings.weights)
+        switch (settings.weights)
         {
-            case 1: return String("maxrE");
-            case 2: return String("inPhase");
-            default: return String("none");
+            case Weights::maxrE:
+                return "maxrE";
+            case Weights::inPhase:
+                return "inPhase";
+            default:
+                return "none";
         }
     }
 
@@ -106,22 +102,21 @@ public:
     {
         if (settings.weightsAlreadyApplied && settings.weights != Weights::none)
         {
+            const auto nCols = static_cast<int> (matrix.getNumColumns());
+            const auto nRows = static_cast<int> (matrix.getNumRows());
             if (settings.weights == Weights::maxrE)
-                for (int i = 0; i < matrix.getNumColumns(); ++i)
-                    for (int j = 0; j < matrix.getNumRows(); ++j)
-                        matrix(j,i) = matrix(j,i) / getMaxRELUT(order)[i];
+                for (int i = 0; i < nCols; ++i)
+                    for (int j = 0; j < nRows; ++j)
+                        matrix (j, i) /= getMaxRELUT (order)[i];
             else if (settings.weights == Weights::inPhase)
-                for (int i = 0; i < matrix.getNumColumns(); ++i)
-                    for (int j = 0; j < matrix.getNumRows(); ++j)
-                        matrix(j,i) = matrix(j,i) / getInPhaseLUT(order)[i];
+                for (int i = 0; i < nCols; ++i)
+                    for (int j = 0; j < nRows; ++j)
+                        matrix (j, i) /= getInPhaseLUT (order)[i];
             settings.weightsAlreadyApplied = false;
         }
     }
 
-    const int getOrder()
-    {
-        return order;
-    }
+    const int getOrder() { return order; }
 
 private:
     Settings settings;

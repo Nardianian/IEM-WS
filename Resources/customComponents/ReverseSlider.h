@@ -20,52 +20,60 @@
  ==============================================================================
  */
 
-/* Parts of this code originate from Yair Chuchem's AudioProcessorParameterSlider class:
+/* Parts of this code originate from Yair Chuchem's juce::AudioProcessorParameterSlider class:
  https://gist.github.com/yairchu */
 
 #pragma once
 
+#include <JuceHeader.h>
+
 #define RS_FLT_EPSILON 1.19209290E-07F
-class ReverseSlider : public Slider
+class ReverseSlider : public juce::Slider
 {
 public:
-    ReverseSlider () :
-        Slider(),
-        lastDistanceFromDragStart(0),
-        reversed(false),
-        isDual(false),
-        scrollWheelEnabled(true)
-    {}
+    ReverseSlider() :
+        juce::Slider(),
+        lastDistanceFromDragStart (0),
+        reversed (false),
+        isDual (false),
+        scrollWheelEnabled (true)
+    {
+    }
 
-    ReverseSlider (const String& componentName) :
-        Slider(componentName),
-        lastDistanceFromDragStart(0),
-        reversed(false),
-        isDual(false),
-        scrollWheelEnabled(true)
-    {}
+    ReverseSlider (const juce::String& componentName) :
+        juce::Slider (componentName),
+        lastDistanceFromDragStart (0),
+        reversed (false),
+        isDual (false),
+        scrollWheelEnabled (true)
+    {
+    }
 
 public:
-
     class SliderAttachment : public juce::AudioProcessorValueTreeState::SliderAttachment
     {
     public:
         SliderAttachment (juce::AudioProcessorValueTreeState& stateToControl,
                           const juce::String& parameterID,
-                          ReverseSlider& sliderToControl) : AudioProcessorValueTreeState::SliderAttachment (stateToControl, parameterID, sliderToControl)
+                          ReverseSlider& sliderToControl) :
+            juce::AudioProcessorValueTreeState::SliderAttachment (stateToControl,
+                                                                  parameterID,
+                                                                  sliderToControl)
         {
-            sliderToControl.setParameter(stateToControl.getParameter(parameterID));
+            sliderToControl.setParameter (stateToControl.getParameter (parameterID));
         }
 
         SliderAttachment (juce::AudioProcessorValueTreeState& stateToControl,
                           const juce::String& parameterID,
-                          Slider& sliderToControl) : AudioProcessorValueTreeState::SliderAttachment (stateToControl, parameterID, sliderToControl)
+                          juce::Slider& sliderToControl) :
+            juce::AudioProcessorValueTreeState::SliderAttachment (stateToControl,
+                                                                  parameterID,
+                                                                  sliderToControl)
         {
         }
 
         virtual ~SliderAttachment() = default;
     };
-
 
     void setReverse (bool shouldBeReversed)
     {
@@ -84,7 +92,7 @@ public:
         }
     }
 
-    void setParameter (const AudioProcessorParameter* p)
+    void setParameter (const juce::AudioProcessorParameter* p)
     {
         if (parameter == p)
             return;
@@ -93,35 +101,41 @@ public:
         repaint();
     }
 
-    String getTextFromValue(double value) override
+    juce::String getTextFromValue (double value) override
     {
         if (parameter == nullptr)
-            return Slider::getTextFromValue (value);
+            return juce::Slider::getTextFromValue (value);
 
-        // juce::AudioProcessorValueTreeState::SliderAttachment sets the slider minimum and maximum to custom values.
-        // We map the range to a 0 to 1 range.
-        const NormalisableRange<double> range (getMinimum(), getMaximum(), getInterval(), getSkewFactor());
+        const juce::NormalisableRange<double> range (getMinimum(),
+                                                     getMaximum(),
+                                                     getInterval(),
+                                                     getSkewFactor());
         const float normalizedVal = (float) range.convertTo0to1 (value);
 
-        String result = parameter->getText (normalizedVal, getNumDecimalPlacesToDisplay()) + " " + parameter->getLabel();
+        juce::String result = parameter->getText (normalizedVal, getNumDecimalPlacesToDisplay())
+                              + " " + parameter->getLabel();
         return result;
     }
 
-    double getValueFromText (const String& text) override
+    double getValueFromText (const juce::String& text) override
     {
         if (parameter == nullptr)
-            return Slider::getValueFromText(text);
-        const NormalisableRange<double> range (getMinimum(), getMaximum(), getInterval(), getSkewFactor());
-        return range.convertFrom0to1(parameter->getValueForText(text));
+            return juce::Slider::getValueFromText (text);
+        const juce::NormalisableRange<double> range (getMinimum(),
+                                                     getMaximum(),
+                                                     getInterval(),
+                                                     getSkewFactor());
+        return range.convertFrom0to1 (parameter->getValueForText (text));
     }
 
     double proportionOfLengthToValue (double proportion) override
     {
         double ret = 0;
         if (reversed)
-            ret = getMaximum() + getMinimum() - Slider::proportionOfLengthToValue(proportion);
+            ret =
+                getMaximum() + getMinimum() - juce::Slider::proportionOfLengthToValue (proportion);
         else
-            ret = Slider::proportionOfLengthToValue(proportion);
+            ret = juce::Slider::proportionOfLengthToValue (proportion);
         return ret;
     }
 
@@ -129,86 +143,88 @@ public:
     {
         double ret = 0;
         if (reversed)
-            ret = jlimit(0., 1., 1.0 - Slider::valueToProportionOfLength(value));
+            ret = juce::jlimit (0., 1., 1.0 - juce::Slider::valueToProportionOfLength (value));
         else
-            ret = Slider::valueToProportionOfLength(value);
+            ret = juce::Slider::valueToProportionOfLength (value);
         return ret;
     }
 
-    void increment ()
-    {
-        setValue (getValue() + getInterval ());
-    }
+    void increment() { setValue (getValue() + getInterval()); }
 
-    void decrement ()
-    {
-        setValue (getValue() - getInterval ());
-    }
+    void decrement() { setValue (getValue() - getInterval()); }
 
-    void setScrollWheelEnabled(bool enabled) {
+    void setScrollWheelEnabled (bool enabled)
+    {
         scrollWheelEnabled = enabled;
-        Slider::setScrollWheelEnabled(enabled);
+        juce::Slider::setScrollWheelEnabled (enabled);
     }
-    void mouseWheelMove (const MouseEvent& e, const MouseWheelDetails& wheel) override
+    void mouseWheelMove (const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel) override
     {
-        if (isRotary() && !getRotaryParameters().stopAtEnd && scrollWheelEnabled)
+        if (isRotary() && ! getRotaryParameters().stopAtEnd && scrollWheelEnabled)
         {
-            const double delta = (std::abs (wheel.deltaX) > std::abs (wheel.deltaY) ? -wheel.deltaX : wheel.deltaY)* (wheel.isReversed ? -1.0f : 1.0f) * (reversed ? -1.0f : 1.0f);
+            const double delta =
+                (std::abs (wheel.deltaX) > std::abs (wheel.deltaY) ? -wheel.deltaX : wheel.deltaY)
+                * (wheel.isReversed ? -1.0f : 1.0f) * (reversed ? -1.0f : 1.0f);
             bool positiveDelta = delta >= 0.0;
 
-            if (std::abs(getValue() - getMaximum()) < getInterval() || std::abs(getValue() - getMaximum()) < RS_FLT_EPSILON)
+            if (std::abs (getValue() - getMaximum()) < getInterval()
+                || std::abs (getValue() - getMaximum()) < RS_FLT_EPSILON)
             {
                 if (positiveDelta)
-                    setValue(getMinimum());
+                    setValue (getMinimum());
             }
-            else if (std::abs(getValue() - getMinimum()) < getInterval() || std::abs(getValue() - getMinimum()) < RS_FLT_EPSILON)
+            else if (std::abs (getValue() - getMinimum()) < getInterval()
+                     || std::abs (getValue() - getMinimum()) < RS_FLT_EPSILON)
             {
-                if (!positiveDelta)
-                    setValue(getMaximum());
+                if (! positiveDelta)
+                    setValue (getMaximum());
             }
         }
-        Slider::mouseWheelMove(e, wheel);
+        juce::Slider::mouseWheelMove (e, wheel);
     }
-    void mouseDown (const MouseEvent& e) override
+    void mouseDown (const juce::MouseEvent& e) override
     {
         lastDistanceFromDragStart = 0;
-        Slider::mouseDown(e);
+        juce::Slider::mouseDown (e);
     }
-    void mouseDrag (const MouseEvent& e) override
+    void mouseDrag (const juce::MouseEvent& e) override
     {
-        if (isRotary() && !getRotaryParameters().stopAtEnd && scrollWheelEnabled)
+        if (isRotary() && ! getRotaryParameters().stopAtEnd && scrollWheelEnabled)
         {
             int delta = 0;
             switch (getSliderStyle())
             {
                 case RotaryVerticalDrag:
-                    delta = - e.getDistanceFromDragStartY() - lastDistanceFromDragStart;
+                    delta = -e.getDistanceFromDragStartY() - lastDistanceFromDragStart;
                     break;
                 case RotaryHorizontalDrag:
                     delta = e.getDistanceFromDragStartX() - lastDistanceFromDragStart;
                     break;
                 case RotaryHorizontalVerticalDrag:
-                    delta = e.getDistanceFromDragStartX() - e.getDistanceFromDragStartY() - lastDistanceFromDragStart;
+                    delta = e.getDistanceFromDragStartX() - e.getDistanceFromDragStartY()
+                            - lastDistanceFromDragStart;
                     break;
                 default:
                     break;
             }
             delta = delta * (reversed ? -1 : 1);
 
-            if (std::abs(getValue() - getMaximum()) < getInterval() || std::abs(getValue() - getMaximum()) < RS_FLT_EPSILON)
+            if (std::abs (getValue() - getMaximum()) < getInterval()
+                || std::abs (getValue() - getMaximum()) < RS_FLT_EPSILON)
             {
                 if (delta > 0)
                 {
-                    setValue(getMinimum());
-                    Slider::mouseDown(e); //hack
+                    setValue (getMinimum());
+                    juce::Slider::mouseDown (e); //hack
                 }
             }
-            else if (std::abs(getValue() - getMinimum()) < getInterval() || std::abs(getValue() - getMinimum()) < RS_FLT_EPSILON)
+            else if (std::abs (getValue() - getMinimum()) < getInterval()
+                     || std::abs (getValue() - getMinimum()) < RS_FLT_EPSILON)
             {
                 if (delta < 0)
                 {
-                    setValue(getMaximum());
-                    Slider::mouseDown(e); //hack
+                    setValue (getMaximum());
+                    juce::Slider::mouseDown (e); //hack
                 }
             }
         }
@@ -216,19 +232,20 @@ public:
         switch (getSliderStyle())
         {
             case RotaryVerticalDrag:
-                lastDistanceFromDragStart = - e.getDistanceFromDragStartY();
+                lastDistanceFromDragStart = -e.getDistanceFromDragStartY();
                 break;
             case RotaryHorizontalDrag:
                 lastDistanceFromDragStart = e.getDistanceFromDragStartX();
                 break;
             case RotaryHorizontalVerticalDrag:
-                lastDistanceFromDragStart = e.getDistanceFromDragStartX() - e.getDistanceFromDragStartY();
+                lastDistanceFromDragStart =
+                    e.getDistanceFromDragStartX() - e.getDistanceFromDragStartY();
                 break;
             default:
                 break;
         }
 
-        Slider::mouseDrag(e);
+        juce::Slider::mouseDrag (e);
     }
 
 private:
@@ -236,5 +253,5 @@ private:
     bool reversed;
     bool isDual;
     bool scrollWheelEnabled;
-    const AudioProcessorParameter* parameter {nullptr};
+    const juce::AudioProcessorParameter* parameter { nullptr };
 };

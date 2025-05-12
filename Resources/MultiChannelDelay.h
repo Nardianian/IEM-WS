@@ -20,17 +20,15 @@
  ==============================================================================
  */
 
-
 #pragma once
 #include "../JuceLibraryCode/JuceHeader.h"
 
-using namespace dsp;
+using namespace juce::dsp;
 
 template <typename FloatType>
 class MultiChannelDelay : private ProcessorBase
 {
 public:
-
     MultiChannelDelay() {}
     ~MultiChannelDelay() {}
 
@@ -42,13 +40,14 @@ public:
         {
             if (delayTimeInSeconds <= 0.0f)
             {
-                delayInSeconds.setUnchecked(channel, 0.0f);
+                delayInSeconds.setUnchecked (channel, 0.0f);
             }
             else
             {
-                delayInSeconds.setUnchecked(channel, delayTimeInSeconds);
+                delayInSeconds.setUnchecked (channel, delayTimeInSeconds);
             }
-            delayInSamples.setUnchecked(channel, delayInSeconds.getUnchecked(channel) * spec.sampleRate);
+            delayInSamples.setUnchecked (channel,
+                                         delayInSeconds.getUnchecked (channel) * spec.sampleRate);
         }
     }
 
@@ -61,28 +60,24 @@ public:
             return 0;
     }
 
-    void setMaxDelayTime (const int maxDelayTimeInSeconds)
-    {
-        maxDelay = maxDelayTimeInSeconds;
-    }
+    void setMaxDelayTime (const int maxDelayTimeInSeconds) { maxDelay = maxDelayTimeInSeconds; }
 
-    void prepare (const ProcessSpec& specs) override
+    void prepare (const juce::dsp::ProcessSpec& specs) override
     {
         spec = specs;
 
         const int maxDelayInSamples = specs.sampleRate * maxDelay;
-        buffer.setSize(specs.numChannels, specs.maximumBlockSize + maxDelayInSamples);
+        buffer.setSize (specs.numChannels, specs.maximumBlockSize + maxDelayInSamples);
         buffer.clear();
         writePosition = 0;
         numChannels = specs.numChannels;
-        delayInSeconds.resize(numChannels);
-        delayInSamples.resize(numChannels);
-
+        delayInSeconds.resize (numChannels);
+        delayInSamples.resize (numChannels);
     }
 
-    void process (const ProcessContextReplacing<FloatType>& context) override
+    void process (const juce::dsp::ProcessContextReplacing<FloatType>& context) override
     {
-        ScopedNoDenormals noDenormals;
+        juce::ScopedNoDenormals noDenormals;
 
         auto abIn = context.getInputBlock();
         auto abOut = context.getOutputBlock();
@@ -91,36 +86,36 @@ public:
 
         // write in delay line
         int startIndex, blockSize1, blockSize2;
-        getWritePositions((int) L, startIndex, blockSize1, blockSize2);
+        getWritePositions ((int) L, startIndex, blockSize1, blockSize2);
 
         for (int ch = 0; ch < nCh; ch++)
-            buffer.copyFrom(ch, startIndex, abIn.getChannelPointer(ch), blockSize1);
+            buffer.copyFrom (ch, startIndex, abIn.getChannelPointer (ch), blockSize1);
 
         if (blockSize2 > 0)
             for (int ch = 0; ch < nCh; ch++)
-                buffer.copyFrom(ch, 0, abIn.getChannelPointer(ch) + blockSize1, blockSize2);
-
+                buffer.copyFrom (ch, 0, abIn.getChannelPointer (ch) + blockSize1, blockSize2);
 
         // read from delay line
         for (int ch = 0; ch < nCh; ch++)
         {
             int startIndex, blockSize1, blockSize2;
-            getReadPositions(ch, (int) L, startIndex, blockSize1, blockSize2);
+            getReadPositions (ch, (int) L, startIndex, blockSize1, blockSize2);
 
-            FloatVectorOperations::copy(abOut.getChannelPointer(ch), buffer.getReadPointer(ch) + startIndex, blockSize1);
+            juce::FloatVectorOperations::copy (abOut.getChannelPointer (ch),
+                                               buffer.getReadPointer (ch) + startIndex,
+                                               blockSize1);
 
             if (blockSize2 > 0)
-                FloatVectorOperations::copy(abOut.getChannelPointer(ch) + blockSize1, buffer.getReadPointer(ch), blockSize2);
+                juce::FloatVectorOperations::copy (abOut.getChannelPointer (ch) + blockSize1,
+                                                   buffer.getReadPointer (ch),
+                                                   blockSize2);
         }
 
         writePosition += L;
         writePosition = writePosition % buffer.getNumSamples();
     }
 
-    void reset() override
-    {
-
-    }
+    void reset() override {}
 
     void getWritePositions (int numSamples, int& startIndex, int& blockSize1, int& blockSize2)
     {
@@ -130,7 +125,7 @@ public:
             pos = pos + L;
         pos = pos % L;
 
-        jassert(pos >= 0 && pos < L);
+        jassert (pos >= 0 && pos < L);
 
         if (numSamples <= 0)
         {
@@ -141,13 +136,17 @@ public:
         else
         {
             startIndex = pos;
-            blockSize1 = jmin (L - pos, numSamples);
+            blockSize1 = juce::jmin (L - pos, numSamples);
             numSamples -= blockSize1;
             blockSize2 = numSamples <= 0 ? 0 : numSamples;
         }
     }
 
-    void getReadPositions (const int channel, int numSamples, int& startIndex, int& blockSize1, int& blockSize2)
+    void getReadPositions (const int channel,
+                           int numSamples,
+                           int& startIndex,
+                           int& blockSize1,
+                           int& blockSize2)
     {
         jassert (channel < delayInSamples.size());
         const int L = buffer.getNumSamples();
@@ -157,7 +156,7 @@ public:
             pos = pos + L;
         pos = pos % L;
 
-        jassert(pos >= 0 && pos < L);
+        jassert (pos >= 0 && pos < L);
 
         if (numSamples <= 0)
         {
@@ -168,7 +167,7 @@ public:
         else
         {
             startIndex = pos;
-            blockSize1 = jmin (L - pos, numSamples);
+            blockSize1 = juce::jmin (L - pos, numSamples);
             numSamples -= blockSize1;
             blockSize2 = numSamples <= 0 ? 0 : numSamples;
         }
@@ -176,14 +175,14 @@ public:
 
 private:
     //==============================================================================
-    ProcessSpec spec = {-1, 0, 0};
+    juce::dsp::ProcessSpec spec = { -1, 0, 0 };
 
-    Array<float> delayInSeconds;
-    Array<int> delayInSamples;
+    juce::Array<float> delayInSeconds;
+    juce::Array<int> delayInSamples;
 
     float maxDelay = 1.0f;
     int numChannels = 0;
 
     int writePosition = 0;
-    AudioBuffer<FloatType> buffer;
+    juce::AudioBuffer<FloatType> buffer;
 };

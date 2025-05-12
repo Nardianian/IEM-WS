@@ -21,12 +21,12 @@
  */
 
 #pragma once
-
+#include <JuceHeader.h>
 
 //==============================================================================
 /*
 */
-class MuteSoloButton    : public ToggleButton
+class MuteSoloButton : public juce::ToggleButton
 {
 public:
     enum Type
@@ -35,38 +35,44 @@ public:
         solo
     };
 
-    MuteSoloButton()
-    {
-        setType(Type::mute);
-    }
-    ~MuteSoloButton()
-    {
-    }
+    MuteSoloButton() { setType (Type::mute); }
+    ~MuteSoloButton() {}
 
     void setType (Type newType)
     {
         type = newType;
-        setColour (ToggleButton::tickColourId, type == Type::mute ? Colours::red : Colours::yellow);
+        setColour (juce::ToggleButton::tickColourId,
+                   type == Type::mute ? juce::Colours::red : juce::Colours::yellow);
         repaint();
     }
-    void paint (Graphics& g) override
+    void paint (juce::Graphics& g) override
     {
-        Rectangle<int> bounds = getLocalBounds().reduced(1,1);
+        juce::Rectangle<int> bounds = getLocalBounds().reduced (1, 1);
         const bool state = getToggleState();
 
-        getLookAndFeel().drawTickBox(g, *this, bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(), getToggleState(), isEnabled(), isMouseOver(), isMouseButtonDown());
+        getLookAndFeel().drawTickBox (g,
+                                      *this,
+                                      bounds.getX(),
+                                      bounds.getY(),
+                                      bounds.getWidth(),
+                                      bounds.getHeight(),
+                                      getToggleState(),
+                                      isEnabled(),
+                                      isMouseOver(),
+                                      isMouseButtonDown());
 
-        g.setFont(getLookAndFeel().getTypefaceForFont (Font(12.0f, 0)));
-        g.setFont(bounds.getHeight()-4);
+        auto currentFont =
+            juce::FontOptions (
+                getLookAndFeel().getTypefaceForFont (
+                    juce::FontOptions (static_cast<float> (bounds.getHeight() - 4), 0)))
+                .withHeight (static_cast<float> (bounds.getHeight() - 4));
+        g.setFont (currentFont);
 
-        g.setColour(state ? Colours::black : findColour(ToggleButton::tickColourId));
-        g.drawFittedText(type == solo ? "S" : "M", bounds, juce::Justification::centred, 1);
-
+        g.setColour (state ? juce::Colours::black : findColour (juce::ToggleButton::tickColourId));
+        g.drawFittedText (type == solo ? "S" : "M", bounds, juce::Justification::centred, 1);
     }
 
-    void resized() override
-    {
-    }
+    void resized() override {}
 
 private:
     Type type;

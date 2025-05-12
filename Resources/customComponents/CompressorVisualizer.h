@@ -22,35 +22,32 @@
 
 #pragma once
 
-#include "../JuceLibraryCode/JuceHeader.h"
 #include "../Compressor.h"
+#include "../JuceLibraryCode/JuceHeader.h"
 
 //==============================================================================
 /*
 */
-class CompressorVisualizer    : public Component
+class CompressorVisualizer : public juce::Component
 {
-    class GridAndLabels : public Component
+    class GridAndLabels : public juce::Component
     {
     public:
         GridAndLabels (float minDB) : minDecibels (minDB)
         {
-            setBufferedToImage(true);
+            setBufferedToImage (true);
             createGrid();
         }
 
-        ~GridAndLabels ()
-        {
+        ~GridAndLabels() {}
 
-        }
-
-        void createGrid ()
+        void createGrid()
         {
             const float step = 10.0f;
 
             grid.clear();
 
-            for (int val = - step; val > minDecibels; val -= step)
+            for (int val = -step; val > minDecibels; val -= step)
             {
                 // add horizontal line
                 grid.startNewSubPath (minDecibels, val);
@@ -62,94 +59,104 @@ class CompressorVisualizer    : public Component
             }
         }
 
-        void paint (Graphics& g) override
+        void paint (juce::Graphics& g) override
         {
-            g.setColour (Colours::steelblue.withMultipliedAlpha (0.8f));
-            g.strokePath (grid, PathStrokeType (0.5f), contentTransform);
+            g.setColour (juce::Colours::steelblue.withMultipliedAlpha (0.8f));
+            g.strokePath (grid, juce::PathStrokeType (0.5f), contentTransform);
 
-            g.setColour (Colours::white.withMultipliedAlpha (0.5f));
+            g.setColour (juce::Colours::white.withMultipliedAlpha (0.5f));
             g.drawRect (contentBounds, 1.0f);
 
-            Line<float> unity (minDecibels + 0.5f, minDecibels  + 0.5f, -0.5f, -0.5f);
-            unity.applyTransform(contentTransform);
+            juce::Line<float> unity (minDecibels + 0.5f, minDecibels + 0.5f, -0.5f, -0.5f);
+            unity.applyTransform (contentTransform);
             float dashLengths[2];
             dashLengths[0] = 2.0f;
             dashLengths[1] = 2.0f;
-            g.drawDashedLine(unity, dashLengths, 2, 0.5f);
+            g.drawDashedLine (unity, dashLengths, 2, 0.5f);
 
-
-            g.setColour(Colours::white);
-            g.setFont(getLookAndFeel().getTypefaceForFont (Font(12.0f, 2)));
-            g.setFont(12.0f);
+            g.setColour (juce::Colours::white);
+            auto currentFont = juce::FontOptions (getLookAndFeel().getTypefaceForFont (
+                                                      juce::FontOptions (12.0f, 2)))
+                                   .withHeight (12.0f);
+            g.setFont (currentFont);
 
             const float step = 10.0f;
             float xPos = 0.0f;
             float yPos = 0.0f;
-            contentTransform.transformPoint(xPos, yPos);
+            contentTransform.transformPoint (xPos, yPos);
 
-            g.drawText ("0 dB", xPos + 1, yPos - 12, 18, 12.0f, Justification::left, false);
+            g.drawText ("0 dB", xPos + 1, yPos - 12, 19, 12.0f, juce::Justification::left, false);
 
-            for (int val = - step; val >= minDecibels; val -= step)
+            for (int val = -step; val >= minDecibels; val -= step)
             {
                 // vertical labels
                 float xPos = 0.0f;
                 float yPos = val;
-                contentTransform.transformPoint(xPos, yPos);
-                g.drawText (String(val), xPos + 4, yPos - 6, 18, 12.0f, Justification::left, false);
-
+                contentTransform.transformPoint (xPos, yPos);
+                g.drawText (juce::String (val),
+                            xPos + 4,
+                            yPos - 6,
+                            18,
+                            12.0f,
+                            juce::Justification::left,
+                            false);
 
                 // horizontal labels
                 xPos = val;
                 yPos = 0.0f;
-                contentTransform.transformPoint(xPos, yPos);
-                g.drawText (String(val), xPos - 9, yPos - 12, 18, 12.0f, Justification::centred, false);
+                contentTransform.transformPoint (xPos, yPos);
+                g.drawText (juce::String (val),
+                            xPos - 9,
+                            yPos - 12,
+                            18,
+                            12.0f,
+                            juce::Justification::centred,
+                            false);
             }
         }
 
         void resized() override
         {
             auto bounds = getLocalBounds();
-            bounds.removeFromTop(12);
-            bounds.removeFromRight(22);
-            bounds.removeFromLeft(10);
-            bounds.removeFromBottom(8);
+            bounds.removeFromTop (12);
+            bounds.removeFromRight (22);
+            bounds.removeFromLeft (10);
+            bounds.removeFromBottom (8);
             contentBounds = bounds;
 
-            contentTransform = AffineTransform::fromTargetPoints(Point<int>(minDecibels, minDecibels), contentBounds.getBottomLeft(), Point<int>(0, 0), contentBounds.getTopRight(), Point<int>(0, minDecibels), contentBounds.getBottomRight());
+            contentTransform = juce::AffineTransform::fromTargetPoints (
+                juce::Point<int> (minDecibels, minDecibels),
+                contentBounds.getBottomLeft(),
+                juce::Point<int> (0, 0),
+                contentBounds.getTopRight(),
+                juce::Point<int> (0, minDecibels),
+                contentBounds.getBottomRight());
         }
 
-        Rectangle<int> getBoundsForContent()
-        {
-            return contentBounds;
-        }
+        juce::Rectangle<int> getBoundsForContent() { return contentBounds; }
 
-        AffineTransform getTransformForContent()
-        {
-            return contentTransform;
-        }
+        juce::AffineTransform getTransformForContent() { return contentTransform; }
 
     private:
         const float minDecibels;
-        Path grid;
+        juce::Path grid;
 
-        Rectangle<int> contentBounds {0, 0, 1, 1};
-        AffineTransform contentTransform;
+        juce::Rectangle<int> contentBounds { 0, 0, 1, 1 };
+        juce::AffineTransform contentTransform;
     };
 
-    class Characteristic : public Component
+    class Characteristic : public juce::Component
     {
     public:
-        Characteristic (Compressor* compressorToGetCharacteristicFrom, float minDB) : compressor(compressorToGetCharacteristicFrom), minDecibels (minDB)
+        Characteristic (iem::Compressor* compressorToGetCharacteristicFrom, float minDB) :
+            compressor (compressorToGetCharacteristicFrom), minDecibels (minDB)
         {
-            setBufferedToImage(true);
+            setBufferedToImage (true);
         }
 
-        ~Characteristic()
-        {
+        ~Characteristic() {}
 
-        }
-
-        void updateCharacteristic ()
+        void updateCharacteristic()
         {
             const float threshold = compressor->getTreshold();
             const float knee = compressor->getKnee();
@@ -159,97 +166,104 @@ class CompressorVisualizer    : public Component
 
             characteristic.clear();
             characteristic.startNewSubPath (minDecibels - 1.0f, minDecibels - 1.0f);
-            characteristic.lineTo (minDecibels, compressor->getCharacteristicSample(minDecibels));
+            characteristic.lineTo (minDecibels, compressor->getCharacteristicSample (minDecibels));
 
-            characteristic.lineTo (kneeStart, compressor->getCharacteristicSample(kneeStart));
+            characteristic.lineTo (kneeStart, compressor->getCharacteristicSample (kneeStart));
 
-            const int kneeSamples = jmax(1, static_cast<int> (knee));
+            const int kneeSamples = juce::jmax (1, static_cast<int> (knee));
             float val = kneeStart;
             float step = knee / kneeSamples;
             for (int i = 0; i < kneeSamples; ++i)
             {
                 val += step;
-                characteristic.lineTo (val, compressor->getCharacteristicSample(val));
+                characteristic.lineTo (val, compressor->getCharacteristicSample (val));
             }
-            characteristic.lineTo (kneeEnd, compressor->getCharacteristicSample(kneeEnd));
-            characteristic.lineTo (0.0f, compressor->getCharacteristicSample(0.0f));
-            characteristic.lineTo (1.0f, compressor->getCharacteristicSample(0.0f));
+            characteristic.lineTo (kneeEnd, compressor->getCharacteristicSample (kneeEnd));
+            characteristic.lineTo (0.0f, compressor->getCharacteristicSample (0.0f));
+            characteristic.lineTo (1.0f, compressor->getCharacteristicSample (0.0f));
             characteristic.lineTo (1.0f, minDecibels - 1.0f);
             characteristic.closeSubPath();
 
             repaint();
         }
 
-        void paint (Graphics& g) override
+        void paint (juce::Graphics& g) override
         {
-            g.setColour (Colours::white);
-            g.strokePath (characteristic, PathStrokeType(2.0f), transform);
+            g.setColour (juce::Colours::white);
+            g.strokePath (characteristic, juce::PathStrokeType (2.0f), transform);
 
-            g.setColour (Colours::steelblue.withMultipliedAlpha (0.3f));
+            g.setColour (juce::Colours::steelblue.withMultipliedAlpha (0.3f));
             g.fillPath (characteristic, transform);
         }
 
-        void resized() override
-        {
-        }
+        void resized() override {}
 
-        void setTransformForContent (AffineTransform newTransform)
+        void setTransformForContent (juce::AffineTransform newTransform)
         {
             transform = newTransform;
         }
-      
-        void setCompressorToVisualize (Compressor *compressorToVisualize)
+
+        void setCompressorToVisualize (iem::Compressor* compressorToVisualize)
         {
             compressor = compressorToVisualize;
         }
 
     private:
-        Compressor* compressor;
+        iem::Compressor* compressor;
         const float minDecibels;
 
-        Path characteristic;
+        juce::Path characteristic;
 
-        AffineTransform transform;
+        juce::AffineTransform transform;
     };
 
-
 public:
-    CompressorVisualizer (Compressor* compressorToVisualize) : compressor(compressorToVisualize), minDecibels(-60.0f), gridAndLabels(minDecibels), characteristic(compressor, minDecibels)
-    {
-        init();
-    }
-  
-    CompressorVisualizer (Compressor& compressorToVisualize) : compressor(&compressorToVisualize), minDecibels(-60.0f), gridAndLabels(minDecibels), characteristic(compressor, minDecibels)
-    {
-        init();
-    }
-
-
-    CompressorVisualizer (Compressor* compressorToVisualize, const float rangeInDecibels) : compressor(compressorToVisualize), minDecibels (-1.0f * rangeInDecibels), gridAndLabels(minDecibels), characteristic(compressor, minDecibels)
+    CompressorVisualizer (iem::Compressor* compressorToVisualize) :
+        compressor (compressorToVisualize),
+        minDecibels (-60.0f),
+        gridAndLabels (minDecibels),
+        characteristic (compressor, minDecibels)
     {
         init();
     }
 
-    CompressorVisualizer (Compressor& compressorToVisualize, const float rangeInDecibels) : compressor(&compressorToVisualize), minDecibels (-1.0f * rangeInDecibels), gridAndLabels(minDecibels), characteristic(compressor, minDecibels)
+    CompressorVisualizer (iem::Compressor& compressorToVisualize) :
+        compressor (&compressorToVisualize),
+        minDecibels (-60.0f),
+        gridAndLabels (minDecibels),
+        characteristic (compressor, minDecibels)
     {
         init();
     }
 
-    ~CompressorVisualizer()
+    CompressorVisualizer (iem::Compressor* compressorToVisualize, const float rangeInDecibels) :
+        compressor (compressorToVisualize),
+        minDecibels (-1.0f * rangeInDecibels),
+        gridAndLabels (minDecibels),
+        characteristic (compressor, minDecibels)
     {
+        init();
     }
+
+    CompressorVisualizer (iem::Compressor& compressorToVisualize, const float rangeInDecibels) :
+        compressor (&compressorToVisualize),
+        minDecibels (-1.0f * rangeInDecibels),
+        gridAndLabels (minDecibels),
+        characteristic (compressor, minDecibels)
+    {
+        init();
+    }
+
+    ~CompressorVisualizer() {}
 
     void init()
     {
-        addAndMakeVisible(gridAndLabels);
-        addAndMakeVisible(characteristic);
+        addAndMakeVisible (gridAndLabels);
+        addAndMakeVisible (characteristic);
         updateCharacteristic();
     }
 
-    void updateCharacteristic ()
-    {
-        characteristic.updateCharacteristic();
-    }
+    void updateCharacteristic() { characteristic.updateCharacteristic(); }
 
     void setMarkerLevels (const float inputLevel, const float gainReduction)
     {
@@ -264,49 +278,47 @@ public:
         }
     }
 
-    void paint (Graphics& g) override
-    {
+    void paint (juce::Graphics& g) override {}
 
-    }
-
-    void paintOverChildren (Graphics& g) override
+    void paintOverChildren (juce::Graphics& g) override
     {
         if (inLevel < minDecibels || outLevel < minDecibels)
             return;
 
-        Rectangle<float> circle (0.0f, 0.0f, 10.0f, 10.0f);
+        juce::Rectangle<float> circle (0.0f, 0.0f, 10.0f, 10.0f);
 
         float x = inLevel;
         float y = outLevel;
-        transform.transformPoint(x, y);
-        circle.setCentre(x, y);
+        transform.transformPoint (x, y);
+        circle.setCentre (x, y);
 
-        g.setColour (Colours::cornflowerblue);
-        g.fillRoundedRectangle(circle, 5.0f);
+        g.setColour (juce::Colours::cornflowerblue);
+        g.fillRoundedRectangle (circle, 5.0f);
     }
 
     void resized() override
     {
         gridAndLabels.setBounds (getLocalBounds());
-        const Rectangle<int> contentBounds = gridAndLabels.getBoundsForContent();
+        const juce::Rectangle<int> contentBounds = gridAndLabels.getBoundsForContent();
         transform = gridAndLabels.getTransformForContent();
 
-        characteristic.setTransformForContent (transform.translated(- contentBounds.getX(), - contentBounds.getY()));
+        characteristic.setTransformForContent (
+            transform.translated (-contentBounds.getX(), -contentBounds.getY()));
         characteristic.setBounds (contentBounds);
     }
-  
-    void setCompressorToVisualize(Compressor *compressorToVisualize)
+
+    void setCompressorToVisualize (iem::Compressor* compressorToVisualize)
     {
         compressor = compressorToVisualize;
-        characteristic.setCompressorToVisualize(compressor);
+        characteristic.setCompressorToVisualize (compressor);
     }
 
 private:
-    Compressor* compressor;
+    iem::Compressor* compressor;
     const float minDecibels;
     GridAndLabels gridAndLabels;
     Characteristic characteristic;
-    AffineTransform transform;
+    juce::AffineTransform transform;
 
     float inLevel = 0.0f;
     float outLevel = 0.0f;

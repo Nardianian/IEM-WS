@@ -20,16 +20,18 @@
  ==============================================================================
  */
 
-
 #pragma once
-#include "WalshHadamard/fwht.h"
 #include "../JuceLibraryCode/JuceHeader.h"
-using namespace dsp;
+#include "FilterVisualizerHelper.h"
+#include "WalshHadamard/fwht.h"
+using namespace juce::dsp;
 class FeedbackDelayNetwork : private ProcessorBase
 {
     static constexpr int maxDelayLength = 30;
+
 public:
-    enum FdnSize {
+    enum FdnSize
+    {
         uninitialized = 0,
         ato = 1,
         femto = 2,
@@ -37,13 +39,23 @@ public:
         nano = 8,
         tiny = 16,
         small = 32,
-        big = 64
+        big = 64,
+        huge = 128,
+        giant = 256
     };
 
-    struct FilterParameter {
+    struct FilterParameter
+    {
         float frequency = 1000.0f;
         float linearGain = 1.0f;
-        float q = 0.707f;
+        float q = 0.7071f;
+    };
+
+    struct HPFilterParameter
+    {
+        int mode = 0;
+        float frequency = 20.0f;
+        float q = 0.7071f;
     };
 
     FeedbackDelayNetwork (FdnSize size = big)
@@ -68,22 +80,29 @@ public:
         params.dryWetChanged = true;
     }
 
-    void prepare (const ProcessSpec& newSpec) override {
+    void prepare (const juce::dsp::ProcessSpec& newSpec) override
+    {
         spec = newSpec;
+        isInitialized = true;
 
         indices = indexGen (fdnSize, delayLength);
         updateParameterSettings();
+        updateGuiCoefficients();
 
         for (int ch = 0; ch < fdnSize; ++ch)
         {
             delayBufferVector[ch]->clear();
             lowShelfFilters[ch]->reset();
             highShelfFilters[ch]->reset();
+
+            hpFilters[ch]->reset (0.0f);
+            additionalHpFilters[ch]->reset (0.0f);
         }
     }
 
-    void process (const ProcessContextReplacing<float>& context) override {
-        ScopedNoDenormals noDenormals;
+    void process (const juce::dsp::ProcessContextReplacing<float>& context) override
+    {
+        juce::ScopedNoDenormals noDenormals;
 
         // parameter change thread safety
         if (params.dryWetChanged)
@@ -96,16 +115,16 @@ public:
         {
             lowShelfParameters = params.newLowShelfParams;
             highShelfParameters = params.newHighShelfParams;
+            hpFilterParameters = params.newHPFilterParams;
             params.needParameterUpdate = true;
             params.filterParametersChanged = false;
         }
 
         if (params.networkSizeChanged)
         {
-            fdnSize = params.newNetworkSize;
             params.needParameterUpdate = true;
             params.networkSizeChanged = false;
-            updateFdnSize (fdnSize);
+            updateFdnSize (params.newNetworkSize);
         }
 
         if (params.delayLengthChanged)
@@ -127,8 +146,7 @@ public:
             updateParameterSettings();
         params.needParameterUpdate = false;
 
-
-        AudioBlock<float>& buffer = context.getOutputBlock();
+        juce::dsp::AudioBlock<float>& buffer = context.getOutputBlock();
 
         const int nChannels = static_cast<int> (buffer.getNumChannels());
         const int numSamples = static_cast<int> (buffer.getNumSamples());
@@ -137,56 +155,63 @@ public:
 
         // if more channels than network order, mix pairs of high order channels
         // until order == number of channels
-//        if (nChannels > fdnSize)
-//        {
-//            int diff = nChannels - fdnSize;
-//            int start_index = nChannels - diff * 2;
-//
-//            for (int num = 0; num < diff; ++num)
-//            {
-//                int idx = start_index + num;
-//
-//                float* writeIn = buffer.getChannelPointer (idx);
-//                const float* writeOut1 = buffer.getChannelPointer (idx + num);
-//                const float* writeOut2 = buffer.getChannelPointer (idx + num + 1);
-//
-//                for (int i = 0; i < numSamples; ++i)
-//                {
-//                    writeIn[i] = (writeOut1[i] + writeOut2[i]) / sqrt(2.f);
-//                }
-//            }
-//        }
+        //        if (nChannels > fdnSize)
+        //        {
+        //            int diff = nChannels - fdnSize;
+        //            int start_index = nChannels - diff * 2;
+        //
+        //            for (int num = 0; num < diff; ++num)
+        //            {
+        //                int idx = start_index + num;
+        //
+        //                float* writeIn = buffer.getChannelPointer (idx);
+        //                const float* writeOut1 = buffer.getChannelPointer (idx + num);
+        //                const float* writeOut2 = buffer.getChannelPointer (idx + num + 1);
+        //
+        //                for (int i = 0; i < numSamples; ++i)
+        //                {
+        //                    writeIn[i] = (writeOut1[i] + writeOut2[i]) / sqrt(2.f);
+        //                }
+        //            }
+        //        }
 
-        float dryGain;
-        if (freeze)
-            dryGain = dryWet;
-        else
-            dryGain = 1.0f - dryWet;
+        float dryGain = 1.0f - dryWet;
 
         for (int i = 0; i < numSamples; ++i)
         {
             // apply delay to each channel for one time sample
             for (int channel = 0; channel < fdnSize; ++channel)
             {
-                const int idx = std::min(channel, nChannels - 1);
-                float *const channelData = buffer.getChannelPointer (idx);
-                float *const delayData = delayBufferVector[channel]->getWritePointer (0);
+                const int idx = std::min (channel, nChannels - 1);
+                float* const channelData = buffer.getChannelPointer (idx);
+                float* const delayData = delayBufferVector[channel]->getWritePointer (0);
 
                 int delayPos = delayPositionVector[channel];
 
                 const float inSample = channelData[i];
-                if (!freeze) {
+                if (! freeze)
+                {
                     // data exchange between IO buffer and delay buffer
 
                     if (channel < nChannels)
                         delayData[delayPos] += inSample;
                 }
 
-                if (!freeze)
+                if (! freeze)
                 {
+                    // Apply highpass filter
+                    if (hpFilterParameters.mode != 0)
+                        delayData[delayPos] =
+                            hpFilters[channel]->processSample (delayData[delayPos]);
+
+                    if (hpFilterParameters.mode == 3)
+                        delayData[delayPos] =
+                            additionalHpFilters[channel]->processSample (delayData[delayPos]);
                     // apply shelving filters
-                    delayData[delayPos] = highShelfFilters[channel]->processSingleSampleRaw(delayData[delayPos]);
-                    delayData[delayPos] = lowShelfFilters[channel]->processSingleSampleRaw(delayData[delayPos]);
+                    delayData[delayPos] =
+                        highShelfFilters[channel]->processSingleSampleRaw (delayData[delayPos]);
+                    delayData[delayPos] =
+                        lowShelfFilters[channel]->processSingleSampleRaw (delayData[delayPos]);
                 }
 
                 if (channel < nChannels)
@@ -194,10 +219,10 @@ public:
                     channelData[i] = delayData[delayPos] * dryWet;
                     channelData[i] += inSample * dryGain;
                 }
-                if (!freeze)
-                    transferVector.set(channel, delayData[delayPos] * feedbackGainVector [channel]);
+                if (! freeze)
+                    transferVector.set (channel, delayData[delayPos] * feedbackGainVector[channel]);
                 else
-                    transferVector.set(channel, delayData[delayPos]);
+                    transferVector.set (channel, delayData[delayPos]);
             }
 
             // perform fast walsh hadamard transform
@@ -207,7 +232,8 @@ public:
             // increment the delay buffer pointer
             for (int channel = 0; channel < fdnSize; ++channel)
             {
-                float *const delayData = delayBufferVector[channel]->getWritePointer (0); // the buffer is single channel
+                float* const delayData =
+                    delayBufferVector[channel]->getWritePointer (0); // the buffer is single channel
 
                 int delayPos = delayPositionVector[channel];
 
@@ -216,51 +242,53 @@ public:
                 if (++delayPos >= delayBufferVector[channel]->getNumSamples())
                     delayPos = 0;
 
-                delayPositionVector.set(channel, delayPos);
+                delayPositionVector.set (channel, delayPos);
             }
         }
         // if more channels than network order, mix pairs of high order channels
         // until order == number of channels
-//        if (nChannels > fdnSize)
-//        {
-//            int diff = nChannels - fdnSize;
-//            int start_index = nChannels - diff * 2;
-//
-//            for (int num = diff - 1; num < 0; --num)
-//            {
-//                int idx = start_index + num;
-//                float *const writeOut = buffer.getChannelPointer (idx);
-//                float *const writeIn1 = buffer.getChannelPointer (idx + num);
-//                float *const writeIn2 = buffer.getChannelPointer (idx + num + 1);
-//
-//                for (int i = 0; i < numSamples; ++i)
-//                {
-//                    writeIn1[i] = writeOut[i] / sqrt(2.f);
-//                    writeIn2[i] = writeIn1[i];
-//                }
-//            }
-//        }
+        //        if (nChannels > fdnSize)
+        //        {
+        //            int diff = nChannels - fdnSize;
+        //            int start_index = nChannels - diff * 2;
+        //
+        //            for (int num = diff - 1; num < 0; --num)
+        //            {
+        //                int idx = start_index + num;
+        //                float *const writeOut = buffer.getChannelPointer (idx);
+        //                float *const writeIn1 = buffer.getChannelPointer (idx + num);
+        //                float *const writeIn2 = buffer.getChannelPointer (idx + num + 1);
+        //
+        //                for (int i = 0; i < numSamples; ++i)
+        //                {
+        //                    writeIn1[i] = writeOut[i] / sqrt(2.f);
+        //                    writeIn2[i] = writeIn1[i];
+        //                }
+        //            }
+        //        }
     }
 
     void setDelayLength (int newDelayLength)
     {
-        params.newDelayLength = jmin (newDelayLength, maxDelayLength);
+        params.newDelayLength = juce::jmin (newDelayLength, maxDelayLength);
         params.delayLengthChanged = true;
     }
 
-    void reset() override {
-
-    }
-    void setFilterParameter(FilterParameter lowShelf, FilterParameter highShelf) {
+    void reset() override {}
+    void setFilterParameter (FilterParameter lowShelf,
+                             FilterParameter highShelf,
+                             HPFilterParameter hp)
+    {
         params.newLowShelfParams = lowShelf;
         params.newHighShelfParams = highShelf;
+        params.newHPFilterParams = hp;
         params.filterParametersChanged = true;
     }
 
     void setT60InSeconds (float reverbTime)
     {
         double temp;
-        double t = double(reverbTime);
+        double t = double (reverbTime);
         temp = -60.0 / (20.0 * t);
         params.newOverallGain = pow (10.0, temp);
         params.overallGainChanged = true;
@@ -272,30 +300,104 @@ public:
         params.overallGainChanged = true;
     }
 
-    void getT60ForFrequencyArray(double* frequencies, double* t60Data, size_t numSamples) {
-        juce::dsp::IIR::Coefficients<float> coefficients;
-        coefficients = *IIR::Coefficients<float>::makeLowShelf (spec.sampleRate, jmin (0.5 * spec.sampleRate, static_cast<double> (lowShelfParameters.frequency)), lowShelfParameters.q, lowShelfParameters.linearGain);
+    juce::dsp::IIR::Coefficients<double>::Ptr getCoefficientsForGui (const int filterIndex) const
+    {
+        return guiCoefficients[filterIndex];
+    }
 
+    void updateGuiCoefficients()
+    {
+        // Highpass coefficients
+        switch (hpFilterParameters.mode)
+        {
+            case 0:
+                guiCoefficients[0] =
+                    IIR::Coefficients<double>::makeAllPass (spec.sampleRate, 20.0f);
+                break;
+            case 1:
+                guiCoefficients[0] = IIR::Coefficients<double>::makeFirstOrderHighPass (
+                    spec.sampleRate,
+                    juce::jmin (0.5 * spec.sampleRate,
+                                static_cast<double> (hpFilterParameters.frequency)));
+                break;
+            case 2:
+                guiCoefficients[0] = IIR::Coefficients<double>::makeHighPass (
+                    spec.sampleRate,
+                    juce::jmin (0.5 * spec.sampleRate,
+                                static_cast<double> (hpFilterParameters.frequency)),
+                    hpFilterParameters.q);
+                break;
+            case 3:
+            {
+                auto coeffs = IIR::Coefficients<double>::makeHighPass (
+                    spec.sampleRate,
+                    juce::jmin (0.5 * spec.sampleRate,
+                                static_cast<double> (hpFilterParameters.frequency)));
+                coeffs->coefficients =
+                    FilterVisualizerHelper<double>::cascadeSecondOrderCoefficients (
+                        coeffs->coefficients,
+                        coeffs->coefficients);
+
+                guiCoefficients[0] = coeffs;
+                break;
+            }
+
+            default:
+                guiCoefficients[0] =
+                    IIR::Coefficients<double>::makeAllPass (spec.sampleRate, 20.0f);
+                break;
+        }
+
+        // Lowshelf
+        guiCoefficients[1] = IIR::Coefficients<double>::makeLowShelf (
+            spec.sampleRate,
+            juce::jmin (0.5 * spec.sampleRate, static_cast<double> (lowShelfParameters.frequency)),
+            lowShelfParameters.q,
+            lowShelfParameters.linearGain);
+
+        // Highshelf
+        guiCoefficients[2] = IIR::Coefficients<double>::makeHighShelf (
+            spec.sampleRate,
+            juce::jmin (0.5 * spec.sampleRate, static_cast<double> (highShelfParameters.frequency)),
+            highShelfParameters.q,
+            highShelfParameters.linearGain);
+
+        repaintFV = true;
+    }
+
+    void getT60ForFrequencyArray (double* frequencies, double* t60Data, size_t numSamples)
+    {
         std::vector<double> temp;
-        temp.resize(numSamples);
+        temp.resize (numSamples);
 
-        coefficients.getMagnitudeForFrequencyArray(frequencies, t60Data, numSamples, spec.sampleRate);
-        coefficients = *IIR::Coefficients<float>::makeHighShelf (spec.sampleRate, jmin (0.5 * spec.sampleRate, static_cast<double> (highShelfParameters.frequency)), highShelfParameters.q, highShelfParameters.linearGain);
-        coefficients.getMagnitudeForFrequencyArray(frequencies, &temp[0], numSamples, spec.sampleRate);
+        juce::dsp::IIR::Coefficients<double> coefficients;
+        updateGuiCoefficients();
 
-        FloatVectorOperations::multiply (&temp[0], t60Data, static_cast<int> (numSamples));
-        FloatVectorOperations::multiply (&temp[0], overallGain, static_cast<int> (numSamples));
+        for (int i = 0; i < 3; ++i)
+        {
+            coefficients = *getCoefficientsForGui (i);
+            coefficients.getMagnitudeForFrequencyArray (frequencies,
+                                                        &temp[0],
+                                                        numSamples,
+                                                        spec.sampleRate);
+        }
+
+        juce::FloatVectorOperations::multiply (&temp[0], t60Data, static_cast<int> (numSamples));
+        juce::FloatVectorOperations::multiply (&temp[0],
+                                               overallGain,
+                                               static_cast<int> (numSamples));
 
         for (int i = 0; i < numSamples; ++i)
         {
-            t60Data[i] = -3.0 / log10(temp[i]);
+            t60Data[i] = -3.0 / log10 (temp[i]);
         }
     }
 
     void setFreeze (bool shouldFreeze)
     {
         freeze = shouldFreeze;
-        if (freeze) DBG("freeze is true");
+        if (freeze)
+            DBG ("freeze is true");
     }
 
     void setFdnSize (FdnSize size)
@@ -307,32 +409,43 @@ public:
         }
     }
 
-    const FdnSize getFdnSize()
-    {
-        return params.newNetworkSize;
-    }
+    const FdnSize getFdnSize() { return params.newNetworkSize; }
+    std::atomic<bool> repaintFV = true;
 
 private:
     //==============================================================================
-    ProcessSpec spec = {-1, 0, 0};
+    juce::dsp::ProcessSpec spec = { 48000.0, 0, 0 };
 
-    OwnedArray<AudioBuffer<float>> delayBufferVector;
-    OwnedArray<IIRFilter> highShelfFilters;
-    OwnedArray<IIRFilter> lowShelfFilters;
-    Array<int> delayPositionVector;
-    Array<float> feedbackGainVector;
-    Array<float> transferVector;
+    juce::OwnedArray<juce::AudioBuffer<float>> delayBufferVector;
+    juce::OwnedArray<juce::IIRFilter> highShelfFilters;
+    juce::OwnedArray<juce::IIRFilter> lowShelfFilters;
+
+    juce::dsp::IIR::Coefficients<float>::Ptr hpCoefficients =
+        juce::dsp::IIR::Coefficients<float>::makeAllPass (48000.0, 20.0f);
+
+    juce::dsp::IIR::Coefficients<float>::Ptr additionalHpCoefficients =
+        juce::dsp::IIR::Coefficients<float>::makeAllPass (48000.0, 20.0f);
+
+    juce::OwnedArray<juce::dsp::IIR::Filter<float>> hpFilters;
+    juce::OwnedArray<juce::dsp::IIR::Filter<float>> additionalHpFilters;
+
+    juce::dsp::IIR::Coefficients<double>::Ptr guiCoefficients[3];
+
+    juce::Array<int> delayPositionVector;
+    juce::Array<float> feedbackGainVector;
+    juce::Array<float> transferVector;
 
     std::vector<int> primeNumbers;
     std::vector<int> indices;
 
     FilterParameter lowShelfParameters, highShelfParameters;
+    HPFilterParameter hpFilterParameters;
     float dryWet;
     float delayLength = 20;
     float overallGain;
 
-
     bool freeze = false;
+    bool isInitialized = false;
     FdnSize fdnSize = uninitialized;
 
     struct UpdateStruct
@@ -343,6 +456,7 @@ private:
         bool filterParametersChanged = false;
         FilterParameter newLowShelfParams;
         FilterParameter newHighShelfParams;
+        HPFilterParameter newHPFilterParams;
 
         bool delayLengthChanged = false;
         int newDelayLength = 20;
@@ -367,9 +481,9 @@ private:
 
     inline float channelGainConversion (int channel, float gain)
     {
-        int delayLenSamples = delayLengthConversion(channel);
+        int delayLenSamples = delayLengthConversion (channel);
 
-        double length = double(delayLenSamples) / double(spec.sampleRate);
+        double length = double (delayLenSamples) / double (spec.sampleRate);
         return pow (gain, length);
     }
 
@@ -390,12 +504,13 @@ private:
 
         for (int i = 1; i < nChannels; i++)
         {
-            increment = firstIncrement + abs (finalIncrement - firstIncrement) / float (nChannels) * i;
+            increment =
+                firstIncrement + abs (finalIncrement - firstIncrement) / float (nChannels) * i;
 
             if (increment < 1)
                 increment = 1.f;
 
-            index = int (round (indices[i-1] + increment));
+            index = int (round (indices[i - 1] + increment));
             indices.push_back (index);
         }
         return indices;
@@ -421,7 +536,7 @@ private:
             if (is_prime)
                 series.push_back (range);
 
-            range++;
+            range += 2;
         }
         return series;
     }
@@ -437,71 +552,114 @@ private:
             int delayLenSamples = delayLengthConversion (channel);
             delayBufferVector[channel]->setSize (1, delayLenSamples, true, true, true);
             if (delayPositionVector[channel] >= delayBufferVector[channel]->getNumSamples())
-                delayPositionVector.set(channel, 0);
+                delayPositionVector.set (channel, 0);
         }
         updateFeedBackGainVector();
         updateFilterCoefficients();
-
     }
 
     void updateFeedBackGainVector()
     {
         for (int channel = 0; channel < fdnSize; ++channel)
         {
-            feedbackGainVector.set(channel, channelGainConversion(channel, overallGain));
+            feedbackGainVector.set (channel, channelGainConversion (channel, overallGain));
         }
     }
 
     void updateFilterCoefficients()
     {
-        if (spec.sampleRate > 0) {
+        if (isInitialized)
+        {
             // update shelving filter parameters
             for (int channel = 0; channel < fdnSize; ++channel)
             {
-                lowShelfFilters[channel]->setCoefficients (
-                    IIRCoefficients::makeLowShelf (
-                        spec.sampleRate,
-                        jmin (0.5 * spec.sampleRate, static_cast<double> (lowShelfParameters.frequency)),
-                        lowShelfParameters.q,
-                        channelGainConversion (
-                            channel,
-                            lowShelfParameters.linearGain)));
+                lowShelfFilters[channel]->setCoefficients (juce::IIRCoefficients::makeLowShelf (
+                    spec.sampleRate,
+                    juce::jmin (0.5 * spec.sampleRate,
+                                static_cast<double> (lowShelfParameters.frequency)),
+                    lowShelfParameters.q,
+                    channelGainConversion (channel, lowShelfParameters.linearGain)));
 
-                highShelfFilters[channel]->setCoefficients (
-                    IIRCoefficients::makeHighShelf (
-                        spec.sampleRate,
-                        jmin (0.5 * spec.sampleRate, static_cast<double> (highShelfParameters.frequency)),
-                        highShelfParameters.q,
-                        channelGainConversion (
-                            channel,
-                            highShelfParameters.linearGain)));
+                highShelfFilters[channel]->setCoefficients (juce::IIRCoefficients::makeHighShelf (
+                    spec.sampleRate,
+                    juce::jmin (0.5 * spec.sampleRate,
+                                static_cast<double> (highShelfParameters.frequency)),
+                    highShelfParameters.q,
+                    channelGainConversion (channel, highShelfParameters.linearGain)));
             }
+
+            juce::dsp::IIR::Coefficients<float>::Ptr tmpCoeffs;
+
+            switch (hpFilterParameters.mode)
+            {
+                case 1:
+                    tmpCoeffs = juce::dsp::IIR::Coefficients<float>::makeFirstOrderHighPass (
+                        spec.sampleRate,
+                        juce::jmin (0.5 * spec.sampleRate,
+                                    static_cast<double> (hpFilterParameters.frequency)));
+
+                    *hpCoefficients = *tmpCoeffs;
+                    break;
+                case 2:
+                    tmpCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighPass (
+                        spec.sampleRate,
+                        juce::jmin (0.5 * spec.sampleRate,
+                                    static_cast<double> (hpFilterParameters.frequency)),
+                        hpFilterParameters.q);
+
+                    *hpCoefficients = *tmpCoeffs;
+                    break;
+
+                case 3:
+                    tmpCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighPass (
+                        spec.sampleRate,
+                        juce::jmin (0.5 * spec.sampleRate,
+                                    static_cast<double> (hpFilterParameters.frequency)));
+                    *hpCoefficients = *tmpCoeffs;
+                    break;
+
+                default:
+                    tmpCoeffs = juce::dsp::IIR::Coefficients<float>::makeAllPass (
+                        spec.sampleRate,
+                        juce::jmin (0.5 * spec.sampleRate,
+                                    static_cast<double> (hpFilterParameters.frequency)));
+
+                    *hpCoefficients = *tmpCoeffs;
+            }
+
+            updateGuiCoefficients();
         }
     }
 
-    void updateFdnSize(FdnSize newSize) {
-        if (fdnSize != newSize) {
+    void updateFdnSize (FdnSize newSize)
+    {
+        if (fdnSize != newSize)
+        {
             const int diff = newSize - delayBufferVector.size();
             if (fdnSize < newSize)
             {
                 for (int i = 0; i < diff; i++)
                 {
-                    delayBufferVector.add (new AudioBuffer<float>());
-                    highShelfFilters.add (new IIRFilter());
-                    lowShelfFilters.add (new IIRFilter());
+                    delayBufferVector.add (new juce::AudioBuffer<float>());
+                    highShelfFilters.add (new juce::IIRFilter());
+                    lowShelfFilters.add (new juce::IIRFilter());
+                    hpFilters.add (new juce::dsp::IIR::Filter<float> (hpCoefficients));
+                    additionalHpFilters.add (new juce::dsp::IIR::Filter<float> (hpCoefficients));
                 }
             }
             else
             {
                 //TODO: what happens if newSize == 0?;
-                delayBufferVector.removeLast(diff);
-                highShelfFilters.removeLast(diff);
-                lowShelfFilters.removeLast(diff);
+                delayBufferVector.removeLast (diff);
+                highShelfFilters.removeLast (diff);
+                lowShelfFilters.removeLast (diff);
+                hpFilters.removeLast (diff);
+                additionalHpFilters.removeLast (diff);
             }
         }
-        delayPositionVector.resize(newSize);
-        feedbackGainVector.resize(newSize);
-        transferVector.resize(newSize);
+        delayPositionVector.resize (newSize);
+        feedbackGainVector.resize (newSize);
+        transferVector.resize (newSize);
         fdnSize = newSize;
     }
 };

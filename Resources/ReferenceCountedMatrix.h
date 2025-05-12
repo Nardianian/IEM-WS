@@ -21,78 +21,62 @@
  */
 
 #pragma once
-using namespace dsp;
-class ReferenceCountedMatrix : public ReferenceCountedObject
+
+class ReferenceCountedMatrix : public juce::ReferenceCountedObject
 {
 public:
-    typedef ReferenceCountedObjectPtr<ReferenceCountedMatrix> Ptr;
+    typedef juce::ReferenceCountedObjectPtr<ReferenceCountedMatrix> Ptr;
 
-    ReferenceCountedMatrix (const String& nameToUse, const String& descriptionToUse, int rows, int columns)
-    :   name (nameToUse), description (descriptionToUse), matrix (rows, columns)
+    ReferenceCountedMatrix (const juce::String& nameToUse,
+                            const juce::String& descriptionToUse,
+                            int rows,
+                            int columns) :
+        name (nameToUse), description (descriptionToUse), matrix (rows, columns)
     {
-
         for (int i = 0; i < rows; ++i)
-            routingArray.add(i);
+            routingArray.add (i);
 
         DBG (getConstructorMessage());
     }
 
-    ~ReferenceCountedMatrix()
+    ~ReferenceCountedMatrix() { DBG (getDeconstructorMessage()); }
+
+    virtual juce::String getConstructorMessage() const
     {
-        DBG (getDeconstructorMessage());
+        return "Matrix named '" + name + "' constructed. Size: "
+               + juce::String (matrix.getNumRows()) + "x" + juce::String (matrix.getNumColumns());
     }
 
-    virtual String getConstructorMessage()
-    {
-        return "Matrix named '" + name + "' constructed. Size: " + String(matrix.getNumRows()) + "x" + String(matrix.getNumColumns());
-    }
-
-    virtual String getDeconstructorMessage()
+    virtual juce::String getDeconstructorMessage() const
     {
         return "Matrix named '" + name + "' destroyed.";
     }
 
-    Matrix<float>& getMatrix()
-    {
-        return matrix;
-    }
-    const String getName()
-    {
-        return name;
-    }
+    juce::dsp::Matrix<float>& getMatrix() { return matrix; }
+    juce::String getName() const { return name; }
 
-    const String getDescription()
-    {
-        return description;
-    }
+    juce::String getDescription() const { return description; }
 
     const int getNumOutputChannels()
     {
         int maxChannel = 0;
         for (int i = routingArray.size(); --i >= 0;)
         {
-            const int newValue = routingArray.getUnchecked(i);
+            const int newValue = routingArray.getUnchecked (i);
             if (newValue > maxChannel)
                 maxChannel = newValue;
         }
         return maxChannel + 1;
     }
 
-    const int getNumInputChannels()
-    {
-        return (int) matrix.getNumColumns();
-    }
+    const int getNumInputChannels() { return (int) matrix.getNumColumns(); }
 
-    Array<int>& getRoutingArrayReference()
-    {
-        return routingArray;
-    }
-
+    juce::Array<int>& getRoutingArrayReference() { return routingArray; }
 
 protected:
-    String name;
-    String description;
-    Matrix<float> matrix;
-    Array<int> routingArray;
+    juce::String name;
+    juce::String description;
+    juce::dsp::Matrix<float> matrix;
+    juce::Array<int> routingArray;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReferenceCountedMatrix)
 };

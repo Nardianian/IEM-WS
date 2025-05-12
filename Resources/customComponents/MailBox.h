@@ -27,52 +27,54 @@
 
 namespace MailBox
 {
-    struct Message { // could become a reference counted object and Display should check regulary if its the only one who holds this reference -> delete
-        String headline = "No Message available";
-        String text = "";
-        Colour messageColour = Colours::lightgrey;
-    };
+struct Message
+{ // could become a reference counted object and Display should check regularly if its the only one who holds this reference -> delete
+    juce::String headline = "No Message available";
+    juce::String text = "";
+    juce::Colour messageColour = juce::Colours::lightgrey;
+};
 
-class Display : public Component
+class Display : public juce::Component
 {
 public:
-    Display() : Component() {
+    Display() : juce::Component() {}
 
-    };
+    ~Display() override {}
 
-    ~Display() {};
-
-    void paint (Graphics& g) override
+    void paint (juce::Graphics& g) override
     {
-        Colour messageColour = message.messageColour;
+        juce::Colour messageColour = message.messageColour;
 
-        Colour textColour = Colours::white;
+        juce::Colour textColour = juce::Colours::white;
 
-        Rectangle<int> background (getLocalBounds());
+        juce::Rectangle<int> background (getLocalBounds());
 
+        g.setColour (messageColour);
+        g.drawRect (background);
+        g.setColour (messageColour.withMultipliedAlpha (0.1f));
+        g.fillRect (background);
 
-        g.setColour(messageColour);
-        g.drawRect(background);
-        g.setColour(messageColour.withMultipliedAlpha(0.1f));
-        g.fillRect(background);
+        auto currentFont =
+            juce::FontOptions (getLookAndFeel().getTypefaceForFont (juce::FontOptions (17.0f, 0)))
+                .withHeight (17.0f);
+        g.setFont (currentFont);
 
-        g.setFont(getLookAndFeel().getTypefaceForFont (Font(12.0f, 0)));
-        g.setFont(17.0f);
+        juce::Rectangle<int> textArea = background.reduced (4, 2);
+        g.setColour (textColour);
+        g.drawText (message.headline, textArea.removeFromTop (20), juce::Justification::topLeft);
 
-        Rectangle<int> textArea = background.reduced(4,2);
-        g.setColour(textColour);
-        g.drawText(message.headline, textArea.removeFromTop(20), Justification::topLeft);
+        currentFont =
+            juce::FontOptions (getLookAndFeel().getTypefaceForFont (juce::FontOptions (14.0f, 2)))
+                .withHeight (14.0f);
+        g.setFont (currentFont);
 
-        g.setFont(getLookAndFeel().getTypefaceForFont (Font(12.0f, 2)));
-        g.setFont(14.0f);
-
-        g.drawFittedText(message.text, textArea, Justification::topLeft, textArea.getHeight() / 13.0f);
+        g.drawFittedText (message.text,
+                          textArea,
+                          juce::Justification::topLeft,
+                          juce::roundToInt (textArea.getHeight() / 13.0f));
     }
 
-    void resized () override
-    {
-
-    }
+    void resized() override {}
 
     void setMessage (Message messageToDisplay)
     {
@@ -80,11 +82,9 @@ public:
         repaint();
     }
 
-
 private:
     Message message;
 
-
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Display)
 };
-}
+} // namespace MailBox

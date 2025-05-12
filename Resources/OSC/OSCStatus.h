@@ -25,16 +25,18 @@
 #include "../customComponents/SimpleLabel.h"
 #include "OSCParameterInterface.h"
 
-class OSCDialogWindow  : public Component, private Timer, private Label::Listener
+class OSCDialogWindow : public juce::Component, private juce::Timer, private juce::Label::Listener
 {
 public:
-    OSCDialogWindow (OSCParameterInterface& oscInterface, OSCReceiverPlus& oscReceiver, OSCSenderPlus& oscSender);
+    OSCDialogWindow (OSCParameterInterface& oscInterface,
+                     OSCReceiverPlus& oscReceiver,
+                     OSCSenderPlus& oscSender);
 
     void timerCallback() override;
 
     void updateOSCAddress();
 
-    void labelTextChanged (Label *labelThatHasChanged) override;
+    void labelTextChanged (juce::Label* labelThatHasChanged) override;
 
     void checkPortAndConnectSender();
 
@@ -51,43 +53,40 @@ private:
 
     bool isSenderConnected = false;
 
-    GroupComponent receiverGroup, senderGroup;
+    juce::GroupComponent receiverGroup, senderGroup;
 
     SimpleLabel slRecPort, slSendIP, slSendPort, slSendName, slInterval;
-    Label lbRPort, lbSPort, lbSHostname, lbSOSCAddress;
+    juce::Label lbRPort, lbSPort, lbSHostname, lbSOSCAddress;
 
-    Slider intervalSlider;
-    TextButton tbReceiverOpen, tbSenderOpen, tbFlush;
+    juce::Slider intervalSlider;
+    juce::TextButton tbReceiverOpen, tbSenderOpen, tbFlush;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OSCDialogWindow)
 };
-
-
 
 //==============================================================================
 /*
  */
-class OSCStatus : public Component, private Timer
+class OSCStatus : public juce::Component, private juce::Timer
 {
 public:
     OSCStatus (OSCParameterInterface& oscInterface);
 
     void timerCallback() override;
 
-    void mouseMove (const MouseEvent &event) override;
+    void mouseMove (const juce::MouseEvent& event) override;
 
-    void mouseExit (const MouseEvent &event) override;
+    void mouseExit (const juce::MouseEvent& event) override;
 
-    void mouseUp (const MouseEvent &event) override;
+    void mouseUp (const juce::MouseEvent& event) override;
 
-    void paint (Graphics& g) override;
-
+    void paint (juce::Graphics& g) override;
 
 private:
     OSCParameterInterface& oscParameterInterface;
     OSCReceiverPlus& oscReceiver;
     OSCSenderPlus& oscSender;
 
-    Rectangle<int> bounds;
+    juce::Rectangle<int> bounds;
     bool mouseOver = false;
 
     bool isReceiverOpen = false;
@@ -95,11 +94,7 @@ private:
 
     bool isSenderOpen = false;
     int lastSenderPort = -1;
-    String lastSenderHostName;
+    juce::String lastSenderHostName;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OSCStatus)
 };
-
-
-
-

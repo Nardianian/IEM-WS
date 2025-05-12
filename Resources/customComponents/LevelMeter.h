@@ -27,13 +27,13 @@
 //==============================================================================
 /*
 */
-class LevelMeter : public Component
+class LevelMeter : public juce::Component
 {
-    class Overlay : public Component
+    class Overlay : public juce::Component
     {
     public:
-        Overlay() { setBufferedToImage (true); };
-        ~Overlay() {};
+        Overlay() { setBufferedToImage (true); }
+        ~Overlay() override = default;
 
         const float decibelsToY (const float dB)
         {
@@ -50,34 +50,39 @@ class LevelMeter : public Component
 
         const float getMeterHeight() { return getHeight() - 2; }
 
-        const Rectangle<int> getMeterArea() { return meterArea; }
+        const juce::Rectangle<int> getMeterArea() { return meterArea; }
 
     private:
-        void paint (Graphics& g) override
+        void paint (juce::Graphics& g) override
         {
-            Path bg;
-            Rectangle<int> meterArea (0, 0, getWidth(), getHeight());
-            meterArea.reduce (2,2);
+            juce::Path bg;
+            juce::Rectangle<int> meterArea (0, 0, getWidth(), getHeight());
+            meterArea.reduce (2, 2);
             int width = meterArea.getWidth();
             int xPos = meterArea.getX();
             bg.addRoundedRectangle (meterArea, 2);
 
-            g.setColour (Colour (0xFF212121));
-            g.strokePath (bg, PathStrokeType(2.f));
+            g.setColour (juce::Colour (0xFF212121));
+            g.strokePath (bg, juce::PathStrokeType (2.f));
 
-
-            g.setColour (Colours::white);
-            g.setFont (getLookAndFeel().getTypefaceForFont (Font (12.0f, 0)));
-            g.setFont (9.0f);
+            g.setColour (juce::Colours::white);
+            auto currentFont = juce::FontOptions (getLookAndFeel().getTypefaceForFont (
+                                                      juce::FontOptions (9.0f, 0)))
+                                   .withHeight (9.0f);
+            g.setFont (currentFont);
 
             int lastTextDrawPos = -1;
             drawLevelMark (g, xPos, width, 0, "0");
             drawLevelMark (g, xPos, width, -3, "3");
             drawLevelMark (g, xPos, width, -6, "6");
 
-
             for (float dB = -10.0f; dB >= minLevel; dB -= 5.0f)
-                lastTextDrawPos = drawLevelMark (g, xPos, width, dB, String (roundToInt (-dB)), lastTextDrawPos);
+                lastTextDrawPos = drawLevelMark (g,
+                                                 xPos,
+                                                 width,
+                                                 dB,
+                                                 juce::String (juce::roundToInt (-dB)),
+                                                 lastTextDrawPos);
         }
 
         void resized() override
@@ -85,10 +90,15 @@ class LevelMeter : public Component
             offset = 0.1 * getHeight();
             scale = getHeight() - offset;
 
-            meterArea = Rectangle<int> (0, 0, getWidth(), getHeight()).reduced (2, 2);
+            meterArea = juce::Rectangle<int> (0, 0, getWidth(), getHeight()).reduced (2, 2);
         }
 
-        const int inline drawLevelMark (Graphics& g, int x, int width, const int level, const String& label, int lastTextDrawPos = -1)
+        const int inline drawLevelMark (juce::Graphics& g,
+                                        int x,
+                                        int width,
+                                        const int level,
+                                        const juce::String& label,
+                                        int lastTextDrawPos = -1)
         {
             float yPos = decibelsToY (level);
             x = x + 1.0f;
@@ -99,27 +109,28 @@ class LevelMeter : public Component
 
             if (yPos - 4 > lastTextDrawPos)
             {
-                g.drawText (label, x + 2, yPos - 4, width - 4, 9, Justification::centred, false);
+                g.drawText (label,
+                            x + 2,
+                            yPos - 4,
+                            width - 4,
+                            9,
+                            juce::Justification::centred,
+                            false);
                 return yPos + 5;
             }
             return lastTextDrawPos;
         }
 
-        Rectangle<int> meterArea;
+        juce::Rectangle<int> meterArea;
         float minLevel = -60.0f;
         float scale = 0.0f;
         float offset = 0.0f;
     };
 
 public:
-    LevelMeter()
-    {
-        addAndMakeVisible (overlay);
-    }
+    LevelMeter() { addAndMakeVisible (overlay); }
 
-    ~LevelMeter()
-    {
-    }
+    ~LevelMeter() {}
 
     void setGainReductionMeter (bool isGainReductionMeter)
     {
@@ -127,27 +138,30 @@ public:
         repaint();
     }
 
-    void paint (Graphics& g) override
+    void paint (juce::Graphics& g) override
     {
         const int height = overlay.getMeterHeight();
 
         auto meterArea = overlay.getMeterArea();
 
-        g.setColour (Colours::black);
+        g.setColour (juce::Colours::black);
         g.fillRect (meterArea);
 
-        Rectangle<int> lvlRect;
+        juce::Rectangle<int> lvlRect;
         if (isGRmeter)
-            lvlRect = Rectangle<int> (Point<int> (meterArea.getX(), overlay.getOffset()), Point<int> (meterArea.getRight(), overlay.decibelsToY (level)));
+            lvlRect = juce::Rectangle<int> (
+                juce::Point<int> (meterArea.getX(), overlay.getOffset()),
+                juce::Point<int> (meterArea.getRight(), overlay.decibelsToY (level)));
         else
-            lvlRect = Rectangle<int> (Point<int> (meterArea.getX(), height), Point<int> (meterArea.getRight(), overlay.decibelsToY (level)));
+            lvlRect = juce::Rectangle<int> (
+                juce::Point<int> (meterArea.getX(), height),
+                juce::Point<int> (meterArea.getRight(), overlay.decibelsToY (level)));
 
         g.setColour (levelColour);
         g.fillRect (lvlRect);
     }
 
-
-    void setColour (Colour newColour)
+    void setColour (juce::Colour newColour)
     {
         levelColour = newColour;
         repaint();
@@ -168,16 +182,12 @@ public:
         repaint();
     }
 
-    void resized() override
-    {
-        overlay.setBounds (getLocalBounds());
-    }
-
+    void resized() override { overlay.setBounds (getLocalBounds()); }
 
 private:
     Overlay overlay;
 
-    Colour levelColour = Colour (Colours::green);
+    juce::Colour levelColour = juce::Colour (juce::Colours::green);
 
     bool isGRmeter = false;
     float level = 0.0f;
