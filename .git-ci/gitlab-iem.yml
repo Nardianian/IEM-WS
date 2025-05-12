@@ -49,6 +49,7 @@ variables:
     - apt-get install -y --no-install-recommends libjack-dev libfftw3-dev
     - cmake --version
 # get VST2SDK
+    - chmod +x .git-ci/getvst.sh
     - .git-ci/getvst.sh
     - rm -rf build
 # Use all available cores, but not more than MAX_JOBS
@@ -92,6 +93,7 @@ variables:
     - rm -f jack*.pkg jack.tgz
     - jackd --version
 # get VST2SDK
+    - chmod +x .git-ci/getvst.sh
     - .git-ci/getvst.sh
     - rm -rf build
 # Use all available cores, but not more than MAX_JOBS
@@ -127,7 +129,7 @@ variables:
   before_script:
     - rm -rf build
     - .git-ci/getvst.sh
-    - .git-ci/fftw4win.sh
+    # - .git-ci/fftw4win.sh
   script:
     - cmake -B build -DIEM_BUILD_VST3=ON -DIEM_BUILD_VST2=ON -DVST2SDKPATH=src/VST_SDK/VST2_SDK/ -DIEM_BUILD_LV2=ON -DIEM_BUILD_STANDALONE=ON -DIEM_POST_BUILD_INSTALL=NO
     - cmake --build build --config Release
