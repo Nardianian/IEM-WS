@@ -29,7 +29,6 @@
 #include "../resources/customComponents/TitleBar.h"
 #include "../resources/lookAndFeel/IEM_LaF.h"
 
-
 /** Include Custom Components. */
 #include "../resources/customComponents/ReverseSlider.h"
 #include "../resources/customComponents/SimpleLabel.h"

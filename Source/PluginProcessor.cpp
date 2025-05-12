@@ -24,21 +24,21 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-WfsAudioProcessor::WfsAudioProcessor()
-    : AudioProcessorBase (
+WfsAudioProcessor::WfsAudioProcessor() :
+    AudioProcessorBase (
 #ifndef JucePlugin_PreferredChannelConfigurations
-    BusesProperties()
-#if ! JucePlugin_IsMidiEffect
-#if ! JucePlugin_IsSynth
-        .withInput ("Input",  AudioChannelSet::discreteChannels (10), true)
+        BusesProperties()
+    #if ! JucePlugin_IsMidiEffect
+        #if ! JucePlugin_IsSynth
+            .withInput ("Input", AudioChannelSet::discreteChannels (10), true)
+        #endif
+            .withOutput ("Output", AudioChannelSet::discreteChannels (64), true)
+    #endif
+            ,
 #endif
-        .withOutput ("Output", AudioChannelSet::discreteChannels (64), true)
-#endif
-    ,
-#endif
-    createParameterLayout()),
-      circularBuffer(88200),
-      numChannelsUsed(2)
+        createParameterLayout()),
+    circularBuffer (88200),
+    numChannelsUsed (2)
 {
     /* Assign all pointers to AudioProcessorValueTreeState parameters. */
     inputChannelsSetting = parameters.getRawParameterValue ("inputChannelsSetting");
@@ -77,7 +77,7 @@ WfsAudioProcessor::WfsAudioProcessor()
     redrawXYPad = false;
 
     /* Update loudspeaker max. each 50ms after a change in GUI has happened. */
-    startTimer(50);
+    startTimer (50);
 }
 
 WfsAudioProcessor::~WfsAudioProcessor()
@@ -115,36 +115,43 @@ void WfsAudioProcessor::changeProgramName (int index, const String& newName)
 void WfsAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     const uint32 numChannels = 1;
-    dsp::ProcessSpec spec({sampleRate, static_cast<uint32>(samplesPerBlock), numChannels});
+    dsp::ProcessSpec spec ({ sampleRate, static_cast<uint32> (samplesPerBlock), numChannels });
 
     /* Initialize FIR filter. */
-    juce::dsp::FIR::Coefficients<float>::Ptr coefficientsFIR = new juce::dsp::FIR::Coefficients<float>(coefArrayFIR.getRawDataPointer(), coefArrayFIR.size());
+    juce::dsp::FIR::Coefficients<float>::Ptr coefficientsFIR =
+        new juce::dsp::FIR::Coefficients<float> (coefArrayFIR.getRawDataPointer(),
+                                                 coefArrayFIR.size());
     firFilter.coefficients = *coefficientsFIR;
-    firFilter.prepare(spec);
+    firFilter.prepare (spec);
     firFilter.reset();
 
-    circularBuffer.prepare(spec);
+    circularBuffer.prepare (spec);
     circularBuffer.reset();
 
-    checkInputAndOutput (this, static_cast<int> (*inputChannelsSetting), static_cast<int> (*outputChannelsSetting), true);
+    checkInputAndOutput (this,
+                         static_cast<int> (*inputChannelsSetting),
+                         static_cast<int> (*outputChannelsSetting),
+                         true);
     ignoreUnused (sampleRate, samplesPerBlock);
 
     /* The number of LS is set according to GUI setting. T
      * There can not be more loudspeakers than #channels allowed (by DAW and GUI output settings). */
-    if (static_cast<int>(*outputChannelsSetting) == 0)
-        numChannelsUsed = jmin(static_cast<int>(*nLoudspeakers), getTotalNumOutputChannels());
+    if (static_cast<int> (*outputChannelsSetting) == 0)
+        numChannelsUsed = jmin (static_cast<int> (*nLoudspeakers), getTotalNumOutputChannels());
     else
-        numChannelsUsed = jmin(static_cast<int>(*nLoudspeakers) , static_cast<int>(*outputChannelsSetting));
+        numChannelsUsed =
+            jmin (static_cast<int> (*nLoudspeakers), static_cast<int> (*outputChannelsSetting));
 
     /* Remove all loudspeakers and add them with updated settings. */
     wfsSpeakerArray.clear();
     for (int channel = 0; channel < numChannelsUsed; channel++)
     {
-        wfsSpeakerArray.add(new WfsSpeakerProcessor(channel, numChannelsUsed));
-        wfsSpeakerArray[channel]->setLoudspeakerCoordinates(*loudspeakerArrayLength,
-                                                            *loudspeakerRadius,
-                                                            MathConstants<float>::pi * (*rotation) / 180.0f,
-                                                            getLoudspeakerArrangementType());
+        wfsSpeakerArray.add (new WfsSpeakerProcessor (channel, numChannelsUsed));
+        wfsSpeakerArray[channel]->setLoudspeakerCoordinates (*loudspeakerArrayLength,
+                                                             *loudspeakerRadius,
+                                                             MathConstants<float>::pi * (*rotation)
+                                                                 / 180.0f,
+                                                             getLoudspeakerArrangementType());
     }
 }
 
@@ -152,63 +159,67 @@ void WfsAudioProcessor::releaseResources()
 {
 }
 
-void WfsAudioProcessor::processBlock(AudioSampleBuffer& buffer, MidiBuffer&)
+void WfsAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuffer&)
 {
-    checkInputAndOutput(this, static_cast<int> (*inputChannelsSetting), static_cast<int> (*outputChannelsSetting), false);
+    checkInputAndOutput (this,
+                         static_cast<int> (*inputChannelsSetting),
+                         static_cast<int> (*outputChannelsSetting),
+                         false);
     ScopedNoDenormals noDenormals;
     AudioSampleBuffer monoBuffer;
 
     if (updateLoudspeakerArray)
     {
         updateLoudspeakerArray = false;
-        prepareToPlay(getSampleRate(), getBlockSize());
+        prepareToPlay (getSampleRate(), getBlockSize());
     }
 
     /* In case we have more outputs than inputs, clear excessive buffers. */
     for (int i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
-        buffer.clear(i, 0, buffer.getNumSamples());
+        buffer.clear (i, 0, buffer.getNumSamples());
 
     /* set class members (output pointer, nSamples, samplerate) */
     for (int channel = 0; channel < numChannelsUsed; channel++)
-        wfsSpeakerArray[channel]->prepareToWrite(buffer.getWritePointer(channel), buffer.getNumSamples(), getSampleRate());
+        wfsSpeakerArray[channel]->prepareToWrite (buffer.getWritePointer (channel),
+                                                  buffer.getNumSamples(),
+                                                  getSampleRate());
 
     /* convert input signal to mono (sum(channelValues)/nChannels)) */
     if (buffer.getNumChannels() > 1)
     {
-        monoBuffer = makeMonoFromMultipleInputChannels(buffer);
-        buffer.clear(1, 0, buffer.getNumSamples());
+        monoBuffer = makeMonoFromMultipleInputChannels (buffer);
+        buffer.clear (1, 0, buffer.getNumSamples());
     }
     else
     {
-        monoBuffer.makeCopyOf(buffer);
+        monoBuffer.makeCopyOf (buffer);
     }
 
     /* Process FIR filter. */
-    auto audioBlock = juce::dsp::AudioBlock<float>(monoBuffer);
-    auto context = juce::dsp::ProcessContextReplacing<float>(audioBlock);
-    firFilter.process(context);
+    auto audioBlock = juce::dsp::AudioBlock<float> (monoBuffer);
+    auto context = juce::dsp::ProcessContextReplacing<float> (audioBlock);
+    firFilter.process (context);
 
     /* Process delay. */
-    const float* readPointerMonoSignal = monoBuffer.getReadPointer(0);
+    const float* readPointerMonoSignal = monoBuffer.getReadPointer (0);
     for (int sample = 0; sample < buffer.getNumSamples(); sample++)
     {
-        circularBuffer.pushSample(0, readPointerMonoSignal[sample]);
+        circularBuffer.pushSample (0, readPointerMonoSignal[sample]);
         for (int channel = 0; channel < numChannelsUsed; ++channel)
         {
-            wfsSpeakerArray[channel]->calculateDelayAndReadFromDelayLine(*sourcePositionX / *zoom,
-                                                                         *sourcePositionY / *zoom,
-                                                                         circularBuffer,
-                                                                         sample);
+            wfsSpeakerArray[channel]->calculateDelayAndReadFromDelayLine (*sourcePositionX / *zoom,
+                                                                          *sourcePositionY / *zoom,
+                                                                          circularBuffer,
+                                                                          sample);
         }
     }
 
     /* Process gain. */
     for (int channel = 0; channel < numChannelsUsed; ++channel)
-        wfsSpeakerArray[channel]->calculateAndApplyGain(*sourcePositionX / *zoom,
-                                                        *sourcePositionY / *zoom,
-                                                        *listenerPositionX / *zoom,
-                                                        *listenerPositionY / *zoom);
-
+        wfsSpeakerArray[channel]->calculateAndApplyGain (*sourcePositionX / *zoom,
+                                                         *sourcePositionY / *zoom,
+                                                         *listenerPositionX / *zoom,
+                                                         *listenerPositionY / *zoom);
 }
 
 bool WfsAudioProcessor::hasEditor() const
@@ -243,7 +254,8 @@ void WfsAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 
             if (parameters.state.hasProperty ("OSCPort")) // legacy
             {
-                oscParameterInterface.getOSCReceiver().connect (parameters.state.getProperty ("OSCPort", var (-1)));
+                oscParameterInterface.getOSCReceiver().connect (
+                    parameters.state.getProperty ("OSCPort", var (-1)));
                 parameters.state.removeProperty ("OSCPort", nullptr);
             }
 
@@ -254,7 +266,7 @@ void WfsAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
         }
 }
 
-void WfsAudioProcessor::parameterChanged (const String &parameterID, float newValue)
+void WfsAudioProcessor::parameterChanged (const String& parameterID, float newValue)
 {
     DBG ("Parameter with ID " << parameterID << " has changed. New value: " << newValue);
 
@@ -273,10 +285,8 @@ void WfsAudioProcessor::parameterChanged (const String &parameterID, float newVa
         scheduleXYPadRedraw = true;
         scheduleLoudspeakerRedraw = true;
     }
-    else if ((parameterID == "loudspeakerArrangement")
-             || (parameterID == "nLoudspeakers")
-             || (parameterID == "loudspeakerArrayLength")
-             || (parameterID == "loudspeakerRadius")
+    else if ((parameterID == "loudspeakerArrangement") || (parameterID == "nLoudspeakers")
+             || (parameterID == "loudspeakerArrayLength") || (parameterID == "loudspeakerRadius")
              || (parameterID == "rotation"))
     {
         scheduleLoudspeakerArrayUpdate = true;
@@ -316,7 +326,7 @@ void WfsAudioProcessor::timerCallback()
 
 LoudspeakerArrangementType WfsAudioProcessor::getLoudspeakerArrangementType()
 {
-    if (*loudspeakerArrangement > (static_cast<float>(LoudspeakerArrangementType::line) + 0.5f))
+    if (*loudspeakerArrangement > (static_cast<float> (LoudspeakerArrangementType::line) + 0.5f))
         return LoudspeakerArrangementType::circle;
     else
         return LoudspeakerArrangementType::line;
@@ -329,27 +339,27 @@ Array<WfsSpeakerProcessor*>& WfsAudioProcessor::getWfsSpeakerArray()
 
 Range<float> WfsAudioProcessor::getSourcePositionXRange()
 {
-    return Range<float> (parameters.getParameterRange("sourcePositionX").getRange().getStart(),
-                         parameters.getParameterRange("sourcePositionX").getRange().getEnd());
+    return Range<float> (parameters.getParameterRange ("sourcePositionX").getRange().getStart(),
+                         parameters.getParameterRange ("sourcePositionX").getRange().getEnd());
 }
 
 Range<float> WfsAudioProcessor::getSourcePositionYRange()
 {
-    return Range<float> (parameters.getParameterRange("sourcePositionY").getRange().getStart(),
-                         parameters.getParameterRange("sourcePositionY").getRange().getEnd());
+    return Range<float> (parameters.getParameterRange ("sourcePositionY").getRange().getStart(),
+                         parameters.getParameterRange ("sourcePositionY").getRange().getEnd());
 }
 
-AudioSampleBuffer WfsAudioProcessor::makeMonoFromMultipleInputChannels(AudioSampleBuffer& buffer)
+AudioSampleBuffer WfsAudioProcessor::makeMonoFromMultipleInputChannels (AudioSampleBuffer& buffer)
 {
     AudioSampleBuffer newMonoBuffer;
-    newMonoBuffer.setSize(1, buffer.getNumSamples());
+    newMonoBuffer.setSize (1, buffer.getNumSamples());
     newMonoBuffer.clear();
 
-    float* writePointerNewMonoBuffer = newMonoBuffer.getWritePointer(0);
+    float* writePointerNewMonoBuffer = newMonoBuffer.getWritePointer (0);
 
     for (int channel = 0; channel < buffer.getNumChannels(); channel++)
     {
-        const float* readPointerInputBuffer = buffer.getReadPointer(channel);
+        const float* readPointerInputBuffer = buffer.getReadPointer (channel);
 
         for (int sample = 0; sample < buffer.getNumSamples(); sample++)
         {
@@ -357,7 +367,7 @@ AudioSampleBuffer WfsAudioProcessor::makeMonoFromMultipleInputChannels(AudioSamp
         }
     }
 
-    newMonoBuffer.applyGain(1.0f / buffer.getNumChannels());
+    newMonoBuffer.applyGain (1.0f / buffer.getNumChannels());
     return newMonoBuffer;
 }
 
@@ -365,53 +375,113 @@ std::vector<std::unique_ptr<RangedAudioParameter>> WfsAudioProcessor::createPara
 {
     std::vector<std::unique_ptr<RangedAudioParameter>> params;
 
-    params.push_back (OSCParameterInterface::createParameterTheOldWay ("inputChannelsSetting", "Number of input channels ", "",
-                                                                       NormalisableRange<float> (0.0f, 10.0f, 1.0f), 0.0f,
-                                                                       [](float value) {return value < 0.5f ? "Auto" : String (value);}, nullptr));
+    params.push_back (OSCParameterInterface::createParameterTheOldWay (
+        "inputChannelsSetting",
+        "Number of input channels ",
+        "",
+        NormalisableRange<float> (0.0f, 10.0f, 1.0f),
+        0.0f,
+        [] (float value) { return value < 0.5f ? "Auto" : String (value); },
+        nullptr));
 
-    params.push_back (OSCParameterInterface::createParameterTheOldWay ("outputChannelsSetting", "Number of output channels ", "",
-                                                                       NormalisableRange<float> (0.0f, 48.0f, 1.0f), 0.0f,
-                                                                       [](float value) {return value < 0.5f ? "Auto" : String (value);}, nullptr));
+    params.push_back (OSCParameterInterface::createParameterTheOldWay (
+        "outputChannelsSetting",
+        "Number of output channels ",
+        "",
+        NormalisableRange<float> (0.0f, 48.0f, 1.0f),
+        0.0f,
+        [] (float value) { return value < 0.5f ? "Auto" : String (value); },
+        nullptr));
 
-    params.push_back (OSCParameterInterface::createParameterTheOldWay ("loudspeakerArrangement", "Loudspeaker Arrangement", "",
-                                                                       NormalisableRange<float> (1.0f, 2.0f, 1.0f), static_cast<float>(LoudspeakerArrangementType::line),
-                                                                       [](float value) {return String (value);}, nullptr));
+    params.push_back (OSCParameterInterface::createParameterTheOldWay (
+        "loudspeakerArrangement",
+        "Loudspeaker Arrangement",
+        "",
+        NormalisableRange<float> (1.0f, 2.0f, 1.0f),
+        static_cast<float> (LoudspeakerArrangementType::line),
+        [] (float value) { return String (value); },
+        nullptr));
 
-    params.push_back (OSCParameterInterface::createParameterTheOldWay ("nLoudspeakers", "Number of loudspeakers", "",
-                                                                       NormalisableRange<float> (1.0f, 64.0f, 1.0f), 8.0f,
-                                                                       [](float value) {return String (value);}, nullptr));
+    params.push_back (OSCParameterInterface::createParameterTheOldWay (
+        "nLoudspeakers",
+        "Number of loudspeakers",
+        "",
+        NormalisableRange<float> (1.0f, 64.0f, 1.0f),
+        8.0f,
+        [] (float value) { return String (value); },
+        nullptr));
 
-    params.push_back (OSCParameterInterface::createParameterTheOldWay ("loudspeakerArrayLength", "Loudspeaker array length", "m",
-                                                                       NormalisableRange<float> (0.1f, 50.0f, 0.01f), 5.0f,
-                                                                       [](float value) {return String (value, 1);}, nullptr));
+    params.push_back (OSCParameterInterface::createParameterTheOldWay (
+        "loudspeakerArrayLength",
+        "Loudspeaker array length",
+        "m",
+        NormalisableRange<float> (0.1f, 50.0f, 0.01f),
+        5.0f,
+        [] (float value) { return String (value, 1); },
+        nullptr));
 
-    params.push_back (OSCParameterInterface::createParameterTheOldWay ("loudspeakerRadius", "Loudspeaker radius", "m",
-                                                                       NormalisableRange<float> (0.1f, 50.0f, 0.01f), 5.0f,
-                                                                       [](float value) {return String (value, 1);}, nullptr));
+    params.push_back (OSCParameterInterface::createParameterTheOldWay (
+        "loudspeakerRadius",
+        "Loudspeaker radius",
+        "m",
+        NormalisableRange<float> (0.1f, 50.0f, 0.01f),
+        5.0f,
+        [] (float value) { return String (value, 1); },
+        nullptr));
 
-    params.push_back (OSCParameterInterface::createParameterTheOldWay ("rotation", "Loudspeaker rotation", "deg",
-                                                                       NormalisableRange<float> (0.0f, 360.0f, 0.1f), 0.0f,
-                                                                       [](float value) {return String (value, 1);}, nullptr));
+    params.push_back (OSCParameterInterface::createParameterTheOldWay (
+        "rotation",
+        "Loudspeaker rotation",
+        "deg",
+        NormalisableRange<float> (0.0f, 360.0f, 0.1f),
+        0.0f,
+        [] (float value) { return String (value, 1); },
+        nullptr));
 
-    params.push_back (OSCParameterInterface::createParameterTheOldWay ("zoom", "Zoom", "x",
-                                                                       CustomUtilities::getNormalisableRangeExp(0.1f, 10.0f), 1.0f,
-                                                                       [](float value) {return String (value, 2);}, nullptr));
+    params.push_back (OSCParameterInterface::createParameterTheOldWay (
+        "zoom",
+        "Zoom",
+        "x",
+        CustomUtilities::getNormalisableRangeExp (0.1f, 10.0f),
+        1.0f,
+        [] (float value) { return String (value, 2); },
+        nullptr));
 
-    params.push_back (OSCParameterInterface::createParameterTheOldWay ("sourcePositionX", "Source Position X", "m",
-                                                                       NormalisableRange<float> (-10.0f, 10.0f, 0.01f), 0.0f,
-                                                                       [](float value) {return String (value, 1);}, nullptr));
+    params.push_back (OSCParameterInterface::createParameterTheOldWay (
+        "sourcePositionX",
+        "Source Position X",
+        "m",
+        NormalisableRange<float> (-10.0f, 10.0f, 0.01f),
+        0.0f,
+        [] (float value) { return String (value, 1); },
+        nullptr));
 
-    params.push_back (OSCParameterInterface::createParameterTheOldWay ("sourcePositionY", "Source Position Y", "m",
-                                                                       NormalisableRange<float> (-7.5f, 7.5f, 0.01f), 0.0f,
-                                                                       [](float value) {return String (value, 1);}, nullptr));
+    params.push_back (OSCParameterInterface::createParameterTheOldWay (
+        "sourcePositionY",
+        "Source Position Y",
+        "m",
+        NormalisableRange<float> (-7.5f, 7.5f, 0.01f),
+        0.0f,
+        [] (float value) { return String (value, 1); },
+        nullptr));
 
-    params.push_back (OSCParameterInterface::createParameterTheOldWay ("listenerPositionX", "Listener Position X", "m",
-                                                                       NormalisableRange<float> (-10.0f, 10.0f, 0.01f), 0.0f,
-                                                                       [](float value) {return String (value, 1);}, nullptr));
+    params.push_back (OSCParameterInterface::createParameterTheOldWay (
+        "listenerPositionX",
+        "Listener Position X",
+        "m",
+        NormalisableRange<float> (-10.0f, 10.0f, 0.01f),
+        0.0f,
+        [] (float value) { return String (value, 1); },
+        nullptr));
 
-    params.push_back (OSCParameterInterface::createParameterTheOldWay ("listenerPositionY", "Listener Position Y", "m",
-                                                                       NormalisableRange<float> (-7.5f, 7.5f, 0.01f), 0.0f,
-                                                                       [](float value) {return String (value, 1);}, nullptr));
+    params.push_back (OSCParameterInterface::createParameterTheOldWay (
+        "listenerPositionY",
+        "Listener Position Y",
+        "m",
+        NormalisableRange<float> (-7.5f, 7.5f, 0.01f),
+        0.0f,
+        [] (float value) { return String (value, 1); },
+        nullptr));
 
     return params;
 }
