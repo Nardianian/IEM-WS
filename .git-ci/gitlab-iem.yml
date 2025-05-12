@@ -67,13 +67,13 @@ variables:
 
 # collect binaries for artifacts
     - mkdir VST3
-    - cp -r build/*/*_artefacts/VST3/*.vst3 VST3/
+    - cp -r build/*_artefacts/VST3/*.vst3 VST3/
     - mkdir VST
-    - cp -r build/*/*_artefacts/VST/*.so VST/
+    - cp -r build/*_artefacts/VST/*.so VST/
     - mkdir LV2
-    - cp -r build/*/*_artefacts/LV2/*.lv2 LV2/
+    - cp -r build/*_artefacts/LV2/*.lv2 LV2/
     - mkdir Standalone
-    - find build/*/*_artefacts/Standalone/ -maxdepth 1 -type f -executable -not -name "*.so" -exec cp {} Standalone/ ";"
+    - find build/*_artefacts/Standalone/ -maxdepth 1 -type f -executable -not -name "*.so" -exec cp {} Standalone/ ";"
 
 .build:macos:
   stage: build
@@ -113,13 +113,13 @@ variables:
 
 # collect binaries for artifacts
     - mkdir VST3
-    - cp -r build/*/*_artefacts/Release/VST3/*.vst3 VST3/
+    - cp -r build/*_artefacts/Release/VST3/*.vst3 VST3/
     - mkdir VST
-    - cp -r build/*/*_artefacts/Release/VST/*.vst VST/
+    - cp -r build/*_artefacts/Release/VST/*.vst VST/
     - mkdir LV2
-    - cp -r build/*/*_artefacts/Release/LV2/*.lv2 LV2/
+    - cp -r build/*_artefacts/Release/LV2/*.lv2 LV2/
     - mkdir Standalone
-    - cp -r build/*/*_artefacts/Release/Standalone/*.app Standalone/
+    - cp -r build/*_artefacts/Release/Standalone/*.app Standalone/
 
 .build:windows:
   stage: build
@@ -135,13 +135,13 @@ variables:
     - cmake --build build --config Release
     # Collect binaries
     - mkdir VST3
-    - cp -r build/*/*_artefacts/Release/VST3/*.vst3 VST3/
+    - cp -r build/*_artefacts/Release/VST3/*.vst3 VST3/
     - mkdir VST
-    - cp -r build/*/*_artefacts/Release/VST/*.dll VST/
+    - cp -r build/*_artefacts/Release/VST/*.dll VST/
     - mkdir LV2
-    - cp -r build/*/*_artefacts/Release/LV2/*.lv2 LV2/
+    - cp -r build/*_artefacts/Release/LV2/*.lv2 LV2/
     - mkdir Standalone
-    - cp -r build/*/*_artefacts/Release/Standalone/*.exe Standalone/
+    - cp -r build/*_artefacts/Release/Standalone/*.exe Standalone/
 
 # expand the templates to real jobs
 
