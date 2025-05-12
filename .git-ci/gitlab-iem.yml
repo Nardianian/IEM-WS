@@ -1,0 +1,341 @@
+# gitlab-ci configuration for the IEM Plugin Suite
+
+stages:
+  - pre-check
+  - build
+  - test
+  - deploy
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+###################################################
+# cleanup after the job (e.g. rename files for the artifacts...)
+.after_script:
+  - test ! -d IEM || find IEM -type f -exec file {} +
+
+###################################################
+### configuration templates
+.artifacts:
+  artifacts:
+    paths:
+      # - VST3
+      - VST
+      # - LV2
+      - Standalone
+      - ChangeLog.md
+    expire_in: 1 week
+
+.run_selected:
+  only:
+    - master
+    - develop
+    - ci-test
+
+.build:linux:
+  stage: build
+  image: ubuntu:jammy
+  tags:
+    - docker
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+    MAX_JOBS: 8
+  before_script:
+# install dependencies
+    - apt-get update -y
+    - apt-get dist-upgrade -y
+    - apt-get install -y --no-install-recommends xvfb xauth curl unzip build-essential ca-certificates wget cmake git
+    - apt-get install -y --no-install-recommends libwebkit2gtk-4.0-dev libasound2-dev libfreetype6-dev libcurl4-gnutls-dev libgl1-mesa-dev libx11-dev libxext-dev libxinerama-dev libxrandr-dev libgtk-3-dev
+    - apt-get install -y --no-install-recommends libjack-dev libfftw3-dev
+    - cmake --version
+# get VST2SDK
+    - .git-ci/getvst.sh
+    - rm -rf build
+# Use all available cores, but not more than MAX_JOBS
+    - |
+      if (($(nproc) < ${MAX_JOBS})); then
+        export NUM_JOBS=$(nproc)
+      else
+        export NUM_JOBS=${MAX_JOBS}
+      fi
+    - echo "Using ${NUM_JOBS} jobs"
+  
+  script:
+    - cmake -B build -DIEM_BUILD_VST3=ON -DIEM_BUILD_VST2=ON -DVST2SDKPATH=src/VST_SDK/VST2_SDK/ -DIEM_BUILD_LV2=ON -DIEM_BUILD_STANDALONE=ON -DIEM_POST_BUILD_INSTALL=NO
+    - cmake --build build --config Release -- -j ${NUM_JOBS}
+
+# collect binaries for artifacts
+    - mkdir VST3
+    - cp -r build/*/*_artefacts/VST3/*.vst3 VST3/
+    - mkdir VST
+    - cp -r build/*/*_artefacts/VST/*.so VST/
+    - mkdir LV2
+    - cp -r build/*/*_artefacts/LV2/*.lv2 LV2/
+    - mkdir Standalone
+    - find build/*/*_artefacts/Standalone/ -maxdepth 1 -type f -executable -not -name "*.so" -exec cp {} Standalone/ ";"
+
+.build:macos:
+  stage: build
+  tags:
+    - tart
+  image: registry.git.iem.at/devtools/docker/tart/macos-sonoma-xcode:latest
+  variables:
+    JACK_VERSION: v1.9.22
+    MAX_JOBS: 8
+  before_script:
+# install dependencies
+    # - HOMEBREW_NO_AUTO_UPDATE=1 brew install jack || true
+    - echo "Getting JACK-${JACK_VERSION}"
+    - curl --fail -L -o jack.tgz https://github.com/jackaudio/jack2-releases/releases/download/${JACK_VERSION}/jack2-macOS-universal-${JACK_VERSION}.tar.gz || true
+    - test ! -e jack.tgz || tar -xvf jack.tgz "jack*.pkg"
+    - for f in ./jack*.pkg; do test -e "${f}" || continue; sudo installer -pkg "${f}" -target /; done
+    - rm -f jack*.pkg jack.tgz
+    - jackd --version
+# get VST2SDK
+    - .git-ci/getvst.sh
+    - rm -rf build
+# Use all available cores, but not more than MAX_JOBS
+    - export NUM_CORES=$(sysctl -n hw.ncpu)
+    - |
+      if ((${NUM_CORES} < ${MAX_JOBS})); then
+        export NUM_JOBS=${NUM_CORES}
+      else
+        export NUM_JOBS=${MAX_JOBS}
+      fi
+    - echo "Using ${NUM_JOBS} jobs"
+
+  script:
+# using xcode as generator seems to produce smaller binaries
+    - cmake -B build -G Xcode -DIEM_BUILD_VST3=ON -DIEM_BUILD_VST2=ON -DVST2SDKPATH=src/VST_SDK/VST2_SDK/ -DIEM_BUILD_LV2=ON -DIEM_BUILD_STANDALONE=ON -DIEM_POST_BUILD_INSTALL=NO
+    - cmake --build build --config Release -- -jobs ${NUM_JOBS}
+
+# collect binaries for artifacts
+    - mkdir VST3
+    - cp -r build/*/*_artefacts/Release/VST3/*.vst3 VST3/
+    - mkdir VST
+    - cp -r build/*/*_artefacts/Release/VST/*.vst VST/
+    - mkdir LV2
+    - cp -r build/*/*_artefacts/Release/LV2/*.lv2 LV2/
+    - mkdir Standalone
+    - cp -r build/*/*_artefacts/Release/Standalone/*.app Standalone/
+
+.build:windows:
+  stage: build
+  tags:
+    - sardinecake
+  image: registry.git.iem.at/devtools/sardinecake/windows:vs2022
+  before_script:
+    - rm -rf build
+    - .git-ci/getvst.sh
+    - .git-ci/fftw4win.sh
+  script:
+    - cmake -B build -DIEM_BUILD_VST3=ON -DIEM_BUILD_VST2=ON -DVST2SDKPATH=src/VST_SDK/VST2_SDK/ -DIEM_BUILD_LV2=ON -DIEM_BUILD_STANDALONE=ON -DIEM_POST_BUILD_INSTALL=NO
+    - cmake --build build --config Release
+    # Collect binaries
+    - mkdir VST3
+    - cp -r build/*/*_artefacts/Release/VST3/*.vst3 VST3/
+    - mkdir VST
+    - cp -r build/*/*_artefacts/Release/VST/*.dll VST/
+    - mkdir LV2
+    - cp -r build/*/*_artefacts/Release/LV2/*.lv2 LV2/
+    - mkdir Standalone
+    - cp -r build/*/*_artefacts/Release/Standalone/*.exe Standalone/
+
+# expand the templates to real jobs
+
+# check for coding-style compliance
+.format-check:
+  stage: pre-check
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+    FORMAT_SCRIPT: true
+  script:
+    # Debian
+    - apt-get update || true
+    - git --version || apt-get install -y --no-install-recommends git || true
+    # alpine
+    - git --version || apk add git || true
+    # the actual check
+    - export EXCLUDED_SUBMODULES=$(git submodule status | awk '{printf "-not -path \"%s/*\" ", $2} END {print ""}')
+    - echo "find * \( -name \"*.cpp\" -or -name \"*.h\"  -or -name \"*.c\"  -or -name \"*.cc\" \) ${EXCLUDED_SUBMODULES} -exec ${FORMAT_SCRIPT} {} \;" | sh
+    - git status --porcelain
+    - git diff --exit-code > format.log
+    # cleanup, if 'git diff' did not complain
+    - rm format.log
+  after_script:
+    - |
+      if test -f format.log; then
+        echo "Check the format.log artifact for differences..."
+      fi
+  artifacts:
+    when: on_failure
+    paths:
+      - format.log
+
+clang-format:
+  extends: .format-check
+  image: xianpengshen/clang-tools:18
+  variables:
+    FORMAT_SCRIPT: clang-format -i
+  before_script:
+    # Debian
+    - apt-get update || true
+    - clang-format --version || apt-get install -y --no-install-recommends clang-format || true
+    # alpine
+    - clang-format --version || apk add clang-extra-tools || true
+
+# check for consistent line-endings
+# git handles native line-endings nicely,
+# iff the files are committed from the proper systems
+# (CRLF-files from Windows; LF-files from un*x)
+linefeed-format:
+  extends: .format-check
+  image: alpine:latest
+  variables:
+    FORMAT_SCRIPT: dos2unix -q
+  before_script:
+    - apk add dos2unix
+
+# some static code analysers
+# currently run in 'pre-check' stage, as the build stage takes so long
+sast:
+  stage: pre-check
+  allow_failure: true
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  before_script:
+    # we really do not want to run sast on JUCE (not our business)
+    - rm -rf $(git submodule status | awk '{printf "%s ", $2} END {print ""}')
+  artifacts:
+    reports:
+      sast: gl-sast-report.json
+    paths:
+      - gl-sast-report.json
+include:
+- template: Security/SAST.gitlab-ci.yml
+
+linux:
+  extends:
+    - .artifacts
+    - .run_selected
+    - .build:linux
+  artifacts:
+    name: IEMWaveFieldSynthesizer_linux
+
+macos:
+  extends:
+    - .artifacts
+    - .run_selected
+    - .build:macos
+  artifacts:
+    name: IEMWaveFieldSynthesizer_macOS
+
+windows:
+  extends:
+    - .artifacts
+    - .run_selected
+    - .build:windows
+  artifacts:
+    name: IEMWaveFieldSynthesizer_windows
+
+
+# Plugin validator
+.pluginval:
+  stage: test
+  extends:
+    - .run_selected
+  allow_failure: true
+  variables:
+    PLUGINVAL_ARGS: --validate-in-process --strictness-level 10 --repeat 3 --timeout-ms 300000 # --vst3validator vst3sdk/cmake-build/bin/Debug/validator
+    PLUGINVAL_ARGS_GUI: --skip-gui-tests
+    PLUGINVAL: ./pluginval
+  artifacts:
+    when: on_failure
+    paths:
+      - failed-tests.txt
+      - test-logs
+  script:
+    - unzip pluginval.zip
+
+    # - git clone --recursive https://github.com/steinbergmedia/vst3sdk.git
+    # - cmake vst3sdk -B vst3sdk/cmake-build
+    # - cmake --build vst3sdk/cmake-build --target validator
+
+    - rm -f failed-tests.txt
+    - rm -rf test-logs
+    - mkdir test-logs
+
+    - |
+      find VST/ -name "*.so" -o -name "*.vst" -o -name "*.dll" | while read fname; do
+        logfile="test-logs/${fname##*/}.txt"
+        ${PLUGINVAL} ${PLUGINVAL_ARGS} ${PLUGINVAL_ARGS_GUI} "$fname" >> ${logfile} || echo "${fname} failed with exit code $?" >> failed-tests.txt;
+        cat $logfile
+      done
+
+    # - |
+    #   find VST3/ -name "*.vst3" | while read fname; do
+    #     logfile="test-logs/${fname##*/}.txt"
+    #     ${PLUGINVAL} ${PLUGINVAL_ARGS} ${PLUGINVAL_ARGS_GUI} "$fname" >> ${logfile} || echo "${fname} failed with exit code $?" >> failed-tests.txt;
+    #     cat $logfile
+    #   done
+
+    - |
+      if test -f failed-tests.txt; then
+          echo "Some tests failed, check artifacts for details..."
+          exit 1
+      fi
+
+linux-pluginval:
+  stage: test
+  extends:
+    - .pluginval
+  image: ubuntu:jammy
+  tags:
+    - docker
+  dependencies:
+    - linux
+  needs:
+    - linux
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+    PLUGINVAL_ARGS_GUI: "--skip-gui-tests"
+    PLUGINVAL: "./pluginval"
+  before_script:
+    - apt-get update -y
+    - apt-get dist-upgrade -y
+    - apt-get install -y --no-install-recommends ca-certificates curl fftw3 libasound2 libfreetype6 unzip xauth xvfb
+    - apt-get install -y --no-install-recommends git build-essential cmake gcc "libstdc++6" libx11-xcb-dev libxcb-util-dev libxcb-cursor-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libfontconfig1-dev libcairo2-dev libgtkmm-3.0-dev libsqlite3-dev libxcb-keysyms1-dev
+
+    - curl -L "https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Linux.zip" -o pluginval.zip
+
+macos-pluginval:
+  extends:
+    - .pluginval
+  tags:
+    - tart
+  image: registry.git.iem.at/devtools/docker/tart/macos-sonoma-xcode:latest
+  dependencies:
+    - macos
+  needs:
+    - macos
+  variables:
+    PLUGINVAL: pluginval.app/Contents/MacOS/pluginval
+  before_script:
+    - curl -L "https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip" -o pluginval.zip
+
+windows-pluginval:
+  stage: test
+  extends:
+    - .pluginval
+  tags:
+    - sardinecake
+  image: registry.git.iem.at/devtools/sardinecake/windows:vs2022
+  dependencies:
+    - windows
+  needs:
+    - windows
+  variables:
+    PLUGINVAL_ARGS_GUI: "--skip-gui-tests"
+    PLUGINVAL: "./pluginval"
+  before_script:
+    - curl -L "https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_windows.zip" -o pluginval.zip

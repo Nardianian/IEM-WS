@@ -26,12 +26,13 @@
 #include "PluginProcessor.h"
 
 /** Include Plugin Design Essentials. */
-#include "../Resources/lookAndFeel/IEM_LaF.h"
-#include "../Resources/customComponents/TitleBar.h"
+#include "../resources/customComponents/TitleBar.h"
+#include "../resources/lookAndFeel/IEM_LaF.h"
+
 
 /** Include Custom Components. */
-#include "../Resources/customComponents/ReverseSlider.h"
-#include "../Resources/customComponents/SimpleLabel.h"
+#include "../resources/customComponents/ReverseSlider.h"
+#include "../resources/customComponents/SimpleLabel.h"
 #include "WfsXyPad.h"
 
 typedef ReverseSlider::SliderAttachment SliderAttachment;
@@ -47,9 +48,9 @@ typedef AudioProcessorValueTreeState::ComboBoxAttachment ComboBoxAttachment;
     This class also implements state variables together with the
     WfsAudioProcessor to update the GUI only when needed.
 */
-class WfsAudioProcessorEditor  : public AudioProcessorEditor, private Timer
+class WfsAudioProcessorEditor : public AudioProcessorEditor, private Timer
 {
-  public:
+public:
     //========= JUCE Editor Template functions =====================================
     WfsAudioProcessorEditor (WfsAudioProcessor&, AudioProcessorValueTreeState&);
     ~WfsAudioProcessorEditor() override;
@@ -63,7 +64,7 @@ class WfsAudioProcessorEditor  : public AudioProcessorEditor, private Timer
     /** Used to update the GUI components after state changes in PluginProcessor. */
     void timerCallback() override;
 
-  private:
+private:
     /** The lookAndFeel class with the IEM plug-in suite design. */
     LaF globalLaF;
 

@@ -23,9 +23,11 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "../Resources/AudioProcessorBase.h"
-#include "WfsSpeakerProcessor.h"
+#include "../resources/AudioProcessorBase.h"
 #include "CustomUtilities.h"
+#include "WfsSpeakerProcessor.h"
+
+using namespace juce;
 
 /* Used in the background by IEM_JackAudio.h */
 #define ProcessorClass WfsAudioProcessor
@@ -38,11 +40,11 @@
     class. It also takes care of the input and output channel settings and of the
     WfsSpeakerArray.
 */
-class WfsAudioProcessor  :  public AudioProcessorBase<IOTypes::AudioChannels<4>,
-                                                      IOTypes::AudioChannels<48>>,
-                            public Timer
+class WfsAudioProcessor
+    : public AudioProcessorBase<IOTypes::AudioChannels<4>, IOTypes::AudioChannels<48>>,
+      public Timer
 {
-  public:
+public:
     //==============================================================================
     /* These parameters are used in the background by IEM_JackAudio.h */
     constexpr static int numberOfInputChannels = 4;
@@ -70,7 +72,7 @@ class WfsAudioProcessor  :  public AudioProcessorBase<IOTypes::AudioChannels<4>,
 
     //==============================================================================
     /** Used for updates in case a value in the AudioProcessorValueTreeState changes. */
-    void parameterChanged (const String &parameterID, float newValue) override;
+    void parameterChanged (const String& parameterID, float newValue) override;
 
     /** Can be used to implement custom behaviour for input and output buffers. */
     void updateBuffers() override;
@@ -85,7 +87,7 @@ class WfsAudioProcessor  :  public AudioProcessorBase<IOTypes::AudioChannels<4>,
     Range<float> getSourcePositionYRange();
 
     /** Creates a mono buffer out of an arbitrary-channel number buffer. */
-    static AudioSampleBuffer makeMonoFromMultipleInputChannels(AudioSampleBuffer& buffer);
+    static AudioSampleBuffer makeMonoFromMultipleInputChannels (AudioSampleBuffer& buffer);
 
     /** Creates the AudioProcessorValueTreeState. */
     std::vector<std::unique_ptr<RangedAudioParameter>> createParameterLayout();
@@ -98,7 +100,7 @@ class WfsAudioProcessor  :  public AudioProcessorBase<IOTypes::AudioChannels<4>,
     std::atomic<bool> redrawXYPad;
     std::atomic<bool> updateLoudspeakerArray;
 
-  private:
+private:
     //==============================================================================
     /** List of all audio parameters. Directly linked to AudioProcessorValueTreeState. */
     std::atomic<float>* inputChannelsSetting;
@@ -116,14 +118,18 @@ class WfsAudioProcessor  :  public AudioProcessorBase<IOTypes::AudioChannels<4>,
 
     /** The FIR filter in the WFS signal chain and its coefficients. */
     dsp::FIR::Filter<float> firFilter;
-    Array <float> coefArrayFIR = {0.354358, -0.013776, -0.013446, -0.013115, -0.012804, -0.01234, -0.012026, -0.011627,
-                                  -0.011123, -0.010768, -0.010297, -0.009842, -0.009393, -0.008908, -0.008498, -0.007998, -0.007499, -0.007111,
-                                  -0.006606, -0.006202, -0.005773, -0.005333, -0.004914, -0.004547, -0.004128, -0.003807, -0.003436, -0.003125,
-                                  -0.002775, -0.002562, -0.002195, -0.002025, -0.001747, -0.001545, -0.001336, -0.001197, -0.000974, -0.000913,
-                                  -0.000687, -0.000702, -0.000496, -0.00046,  -0.000394, -0.000361, -0.000248, -0.000301, -0.000224, -0.000196,
-                                  -0.000179, -0.000249, -0.000181, -0.000211, -0.000240, -0.000178, -0.000333, -0.000183, -0.000344, -0.000257,
-                                  -0.000376, -0.000292, -0.000368, -0.000397, -0.000338, -0.000468, -0.000352, -0.000469, -0.000382, -0.000469,
-                                  -0.000446, -0.000428, -0.000457, -0.000377, -0.000542, -0.000173, -0.009305 };
+    Array<float> coefArrayFIR = {
+        0.354358,  -0.013776, -0.013446, -0.013115, -0.012804, -0.01234,  -0.012026, -0.011627,
+        -0.011123, -0.010768, -0.010297, -0.009842, -0.009393, -0.008908, -0.008498, -0.007998,
+        -0.007499, -0.007111, -0.006606, -0.006202, -0.005773, -0.005333, -0.004914, -0.004547,
+        -0.004128, -0.003807, -0.003436, -0.003125, -0.002775, -0.002562, -0.002195, -0.002025,
+        -0.001747, -0.001545, -0.001336, -0.001197, -0.000974, -0.000913, -0.000687, -0.000702,
+        -0.000496, -0.00046,  -0.000394, -0.000361, -0.000248, -0.000301, -0.000224, -0.000196,
+        -0.000179, -0.000249, -0.000181, -0.000211, -0.000240, -0.000178, -0.000333, -0.000183,
+        -0.000344, -0.000257, -0.000376, -0.000292, -0.000368, -0.000397, -0.000338, -0.000468,
+        -0.000352, -0.000469, -0.000382, -0.000469, -0.000446, -0.000428, -0.000457, -0.000377,
+        -0.000542, -0.000173, -0.009305
+    };
 
     /** The loudspeaker array, each loudspeaker is a secondary sound source. */
     Array<WfsSpeakerProcessor*> wfsSpeakerArray;

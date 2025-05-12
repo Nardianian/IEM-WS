@@ -23,6 +23,8 @@
 #pragma once
 #include "../JuceLibraryCode/JuceHeader.h"
 
+using namespace juce;
+
 /** The enum needs to start at 1 because of cbLoudspeakerArrangement.addItem() */
 enum class LoudspeakerArrangementType
 {
@@ -39,27 +41,37 @@ enum class LoudspeakerArrangementType
 */
 class WfsSpeakerProcessor
 {
-  public:
-    WfsSpeakerProcessor(int channelToUse, int nLoudspeakersToUse);
+public:
+    WfsSpeakerProcessor (int channelToUse, int nLoudspeakersToUse);
     ~WfsSpeakerProcessor() = default;
 
     /** This function works the same way prepareToPlay() does. */
-    void prepareToWrite(float* writePointerToUse, int nSamplesInBufferToUse, int sampleRateToUse);
+    void prepareToWrite (float* writePointerToUse, int nSamplesInBufferToUse, int sampleRateToUse);
 
     /** Set the loudspeaker coordinates using the GUI parameters. */
-    Point<float> setLoudspeakerCoordinates(float lineLength, float radius, float rotation, LoudspeakerArrangementType loudspeakerArrangementTypeToUse);
+    Point<float>
+        setLoudspeakerCoordinates (float lineLength,
+                                   float radius,
+                                   float rotation,
+                                   LoudspeakerArrangementType loudspeakerArrangementTypeToUse);
 
     /** Update loudspeaker gain. */
-    void calculateAndApplyGain(float sourcePosX, float sourcePosY, float listenerPosX, float listenerPosY);
+    void calculateAndApplyGain (float sourcePosX,
+                                float sourcePosY,
+                                float listenerPosX,
+                                float listenerPosY);
 
     /** Update the delay and read correspondingly from the delay line. */
-    void calculateDelayAndReadFromDelayLine(float sourcePosX, float sourcePosY, juce::dsp::DelayLine<float>& delayLine, int sample);
+    void calculateDelayAndReadFromDelayLine (float sourcePosX,
+                                             float sourcePosY,
+                                             juce::dsp::DelayLine<float>& delayLine,
+                                             int sample);
 
     /** Getter functions. */
     float getXInMeters() const { return xCoordinate; }
     float getYInMeters() const { return yCoordinate; }
 
-  private:
+private:
     /** The unique loudspeaker properties. */
     float xCoordinate;
     float yCoordinate;

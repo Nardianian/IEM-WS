@@ -22,11 +22,19 @@
 
 #include "WfsSpeakerProcessor.h"
 
-WfsSpeakerProcessor::WfsSpeakerProcessor(int channelToUse, int nLoudspeakersToUse) :
-    xCoordinate(0.0f), yCoordinate(0.0f), writePointerOutputChannel(nullptr),
-    nSamplesInBuffer(512), updateRingBufferReadPointer(false),
-    speedOfSound(343.0f), sampleRate(44100), previousGain(0.0f), previousDelay(0.0f),
-    epsilonFloat(10.0f * std::numeric_limits<float>::epsilon())
+using namespace juce;
+
+WfsSpeakerProcessor::WfsSpeakerProcessor (int channelToUse, int nLoudspeakersToUse) :
+    xCoordinate (0.0f),
+    yCoordinate (0.0f),
+    writePointerOutputChannel (nullptr),
+    nSamplesInBuffer (512),
+    updateRingBufferReadPointer (false),
+    speedOfSound (343.0f),
+    sampleRate (44100),
+    previousGain (0.0f),
+    previousDelay (0.0f),
+    epsilonFloat (10.0f * std::numeric_limits<float>::epsilon())
 {
     channel = channelToUse;
     nLoudspeakers = nLoudspeakersToUse;
@@ -34,10 +42,13 @@ WfsSpeakerProcessor::WfsSpeakerProcessor(int channelToUse, int nLoudspeakersToUs
         updateRingBufferReadPointer = true;
     else
         updateRingBufferReadPointer = false;
-
 }
 
-Point<float> WfsSpeakerProcessor::setLoudspeakerCoordinates(float lineLength, float radius, float rotation, LoudspeakerArrangementType loudspeakerArrangementTypeToUse)
+Point<float> WfsSpeakerProcessor::setLoudspeakerCoordinates (
+    float lineLength,
+    float radius,
+    float rotation,
+    LoudspeakerArrangementType loudspeakerArrangementTypeToUse)
 {
     Point<float> coordinatesInMeters;
 
@@ -45,60 +56,72 @@ Point<float> WfsSpeakerProcessor::setLoudspeakerCoordinates(float lineLength, fl
     {
         /* Loudspeakers in line arrangement always sit on the x-axis. */
         float startingPointX = -lineLength / 2;
-        float deltaX = lineLength / static_cast<float>(nLoudspeakers-1);
+        float deltaX = lineLength / static_cast<float> (nLoudspeakers - 1);
 
-        xCoordinate = startingPointX + deltaX * static_cast<float>(channel);
+        xCoordinate = startingPointX + deltaX * static_cast<float> (channel);
         yCoordinate = 0.0f;
     }
     else if (loudspeakerArrangementTypeToUse == LoudspeakerArrangementType::circle)
     {
-        float deltaPhi = 2 * MathConstants<float>::pi / static_cast<float>(nLoudspeakers);
+        float deltaPhi = 2 * MathConstants<float>::pi / static_cast<float> (nLoudspeakers);
         float phiZero = MathConstants<float>::pi / 2.0f + rotation;
 
-        xCoordinate = cos(phiZero + static_cast<float>(channel) * deltaPhi) * radius;
-        yCoordinate = sin(phiZero + static_cast<float>(channel) * deltaPhi) * radius;
+        xCoordinate = cos (phiZero + static_cast<float> (channel) * deltaPhi) * radius;
+        yCoordinate = sin (phiZero + static_cast<float> (channel) * deltaPhi) * radius;
     }
 
     if (nLoudspeakers > 1)
-        coordinatesInMeters.addXY(xCoordinate, yCoordinate);
+        coordinatesInMeters.addXY (xCoordinate, yCoordinate);
     else if (nLoudspeakers == 1)
-        coordinatesInMeters.addXY(0.0f, 0.0f);
+        coordinatesInMeters.addXY (0.0f, 0.0f);
     else
         jassertfalse;
 
     return coordinatesInMeters;
 }
 
-void WfsSpeakerProcessor::calculateAndApplyGain(float sourcePosX, float sourcePosY, float listenerPosX, float listenerPosY)
+void WfsSpeakerProcessor::calculateAndApplyGain (float sourcePosX,
+                                                 float sourcePosY,
+                                                 float listenerPosX,
+                                                 float listenerPosY)
 {
-    Point<float> listenerPosition(listenerPosX, listenerPosY);
+    Point<float> listenerPosition (listenerPosX, listenerPosY);
 
     float gain;
-    float distanceSourceToSpeaker = sqrt(pow(sourcePosX - xCoordinate, 2.0f) + pow(sourcePosY - yCoordinate, 2.0f)) + epsilonFloat;
+    float distanceSourceToSpeaker =
+        sqrt (pow (sourcePosX - xCoordinate, 2.0f) + pow (sourcePosY - yCoordinate, 2.0f))
+        + epsilonFloat;
 
     /* TODO implement a different formula for circle arrangement */
     LoudspeakerArrangementType loudspeakerArrangementTypeToUse = LoudspeakerArrangementType::line;
 
     if (loudspeakerArrangementTypeToUse == LoudspeakerArrangementType::line)
     {
-        float deltaY = abs(listenerPosition.y) + abs(sourcePosY);
+        float deltaY = abs (listenerPosition.y) + abs (sourcePosY);
 
-        gain = -sourcePosY * sqrt( abs(listenerPosition.y)/(2.0f* MathConstants<float>::pi*deltaY) ) / pow(distanceSourceToSpeaker, 1.5f);
+        gain = -sourcePosY
+               * sqrt (abs (listenerPosition.y) / (2.0f * MathConstants<float>::pi * deltaY))
+               / pow (distanceSourceToSpeaker, 1.5f);
     }
     else if (loudspeakerArrangementTypeToUse == LoudspeakerArrangementType::circle)
     {
-        float distanceSourceToListener = sqrt(pow(sourcePosX - listenerPosition.x, 2.0f) + pow(sourcePosY - listenerPosition.y, 2.0f)) + epsilonFloat;
-        gain = -sourcePosY * sqrt((distanceSourceToListener - distanceSourceToSpeaker) /  (2*MathConstants<float>::pi* distanceSourceToListener) / pow(distanceSourceToSpeaker, 1.5f)) ;
+        float distanceSourceToListener = sqrt (pow (sourcePosX - listenerPosition.x, 2.0f)
+                                               + pow (sourcePosY - listenerPosition.y, 2.0f))
+                                         + epsilonFloat;
+        gain = -sourcePosY
+               * sqrt ((distanceSourceToListener - distanceSourceToSpeaker)
+                       / (2 * MathConstants<float>::pi * distanceSourceToListener)
+                       / pow (distanceSourceToSpeaker, 1.5f));
     }
 
     /* Set the max gain a speaker/channel can receive to 1. */
-    gain = jmin(gain, 1.0f);
+    gain = jmin (gain, 1.0f);
 
     /* Interpolate gain between sblocks. */
-    float deltaGain = (gain - previousGain) / static_cast<float>(nSamplesInBuffer);
+    float deltaGain = (gain - previousGain) / static_cast<float> (nSamplesInBuffer);
     for (int sample = 0; sample < nSamplesInBuffer; sample++)
     {
-        gain = previousGain + deltaGain * static_cast<float>(sample + 1);
+        gain = previousGain + deltaGain * static_cast<float> (sample + 1);
         writePointerOutputChannel[sample] = writePointerOutputChannel[sample] * gain;
     }
 
@@ -106,29 +129,37 @@ void WfsSpeakerProcessor::calculateAndApplyGain(float sourcePosX, float sourcePo
     previousGain = gain;
 }
 
-
-void WfsSpeakerProcessor::prepareToWrite(float* writePointerToUse, int nSamplesInBufferToUse, int sampleRateToUse)
+void WfsSpeakerProcessor::prepareToWrite (float* writePointerToUse,
+                                          int nSamplesInBufferToUse,
+                                          int sampleRateToUse)
 {
     writePointerOutputChannel = writePointerToUse;
     nSamplesInBuffer = nSamplesInBufferToUse;
     sampleRate = sampleRateToUse;
 }
 
-void WfsSpeakerProcessor::calculateDelayAndReadFromDelayLine(float sourcePosX, float sourcePosY, juce::dsp::DelayLine<float>& delayLine, int sampleIndex)
+void WfsSpeakerProcessor::calculateDelayAndReadFromDelayLine (
+    float sourcePosX,
+    float sourcePosY,
+    juce::dsp::DelayLine<float>& delayLine,
+    int sampleIndex)
 {
-    float distanceSourceSpeaker = sqrt(pow(sourcePosX - xCoordinate, 2.0f) + pow(sourcePosY - yCoordinate, 2.0f));
+    float distanceSourceSpeaker =
+        sqrt (pow (sourcePosX - xCoordinate, 2.0f) + pow (sourcePosY - yCoordinate, 2.0f));
 
     float delayInSeconds = distanceSourceSpeaker / speedOfSound;
     float delayInSamples = delayInSeconds * sampleRate;
 
     /* Calculate and limit the delay difference using the previous delay. */
-    float deltaDelayInSamples = (delayInSamples - previousDelay) / static_cast<float>(nSamplesInBuffer - sampleIndex);
-    deltaDelayInSamples = jlimit(-0.1f, 0.1f, deltaDelayInSamples);
+    float deltaDelayInSamples =
+        (delayInSamples - previousDelay) / static_cast<float> (nSamplesInBuffer - sampleIndex);
+    deltaDelayInSamples = jlimit (-0.1f, 0.1f, deltaDelayInSamples);
 
     delayInSamples = previousDelay + deltaDelayInSamples;
 
     /* Write delayed sample into output buffer. */
-    writePointerOutputChannel[sampleIndex] = delayLine.popSample(0, delayInSamples, updateRingBufferReadPointer);
+    writePointerOutputChannel[sampleIndex] =
+        delayLine.popSample (0, delayInSamples, updateRingBufferReadPointer);
 
     /* Update previous value. */
     previousDelay = delayInSamples;
