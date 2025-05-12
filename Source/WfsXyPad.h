@@ -34,7 +34,7 @@ using namespace juce;
     To connect to its background, this class holds the background as member. However,
     the background is only drawn if needed, to save ressources.
 */
-class WfsXyPad    : public Component
+class WfsXyPad : public Component
 {
     struct xySlidersAndColour
     {
@@ -43,14 +43,15 @@ class WfsXyPad    : public Component
         Colour colour;
     };
 
-  public:
-    WfsXyPad(Array<WfsSpeakerProcessor*>& wfsSpeakerArrayToUse) : xRangeWithZoom1(-10.0f, 10.0f),
-                                                               yRangeWithZoom1(-5.0f, 5.0f),
-                                                               background(wfsSpeakerArrayToUse)
+public:
+    WfsXyPad (Array<WfsSpeakerProcessor*>& wfsSpeakerArrayToUse) :
+        xRangeWithZoom1 (-10.0f, 10.0f),
+        yRangeWithZoom1 (-5.0f, 5.0f),
+        background (wfsSpeakerArrayToUse)
     {
-        background.setBounds(getLocalBounds());
-        addAndMakeVisible(background);
-        background.addMouseListener(this, false);
+        background.setBounds (getLocalBounds());
+        addAndMakeVisible (background);
+        background.addMouseListener (this, false);
     }
     ~WfsXyPad() override = default;
 
@@ -69,59 +70,69 @@ class WfsXyPad    : public Component
         {
             bool isActive = (activeElem == i);
 
-            xySlidersAndColour handle =  elements.getReference(i);
+            xySlidersAndColour handle = elements.getReference (i);
 
             /* Get range and positions. */
             Range<double> xRange = handle.xSlider->getRange();
             Range<double> yRange = handle.ySlider->getRange();
-            float xPosInPixels = topLeftX + (handle.xSlider->getValue()-xRange.getStart()) * width / xRange.getLength();
-            float yPosInPixels = bottomY - (handle.ySlider->getValue()-yRange.getStart()) * height / yRange.getLength();
+            float xPosInPixels =
+                topLeftX
+                + (handle.xSlider->getValue() - xRange.getStart()) * width / xRange.getLength();
+            float yPosInPixels =
+                bottomY
+                - (handle.ySlider->getValue() - yRange.getStart()) * height / yRange.getLength();
 
             if (i == LISTENER_INDEX)
             {
                 if (background.loudspeakerArrangementType == LoudspeakerArrangementType::line)
                 {
                     /* Limit listener position. */
-                    yPosInPixels = jmax(yPosInPixels, bottomY - height / 2);
+                    yPosInPixels = jmax (yPosInPixels, bottomY - height / 2);
 
                     /* Draw reference line. */
-                    g.setColour(background.colours.listener.withBrightness(1.5));
+                    g.setColour (background.colours.listener.withBrightness (1.5));
                     Line<float> referenceLine (plotArea.getX() + edgeDistanceInPixels,
                                                yPosInPixels,
-                                               plotArea.getX() + plotArea.getWidth() - edgeDistanceInPixels,
+                                               plotArea.getX() + plotArea.getWidth()
+                                                   - edgeDistanceInPixels,
                                                yPosInPixels);
-                    g.drawDashedLine(referenceLine, Array<float>(6, 6).getRawDataPointer(), 2, 2.0f);
+                    g.drawDashedLine (referenceLine,
+                                      Array<float> (6, 6).getRawDataPointer(),
+                                      2,
+                                      2.0f);
                 }
                 else
                 {
                     /* TODO limit position for circle arrangement. */
                 }
 
-                g.setColour(background.colours.listener);
+                g.setColour (background.colours.listener);
             }
             else
             {
-                g.setColour(background.colours.source);
+                g.setColour (background.colours.source);
             }
 
             /* Draw positional circle. */
             Path path;
-            path.addEllipse(xPosInPixels - positionCircleRadius, yPosInPixels - positionCircleRadius,
-                            positionCircleRadius * 2, positionCircleRadius * 2);
-            g.fillPath(path);
+            path.addEllipse (xPosInPixels - positionCircleRadius,
+                             yPosInPixels - positionCircleRadius,
+                             positionCircleRadius * 2,
+                             positionCircleRadius * 2);
+            g.fillPath (path);
 
             /* Annotate the circle with either "L" for Listener or "S" for Source. */
-            g.setColour(background.colours.text);
+            g.setColour (background.colours.text);
             if (i == LISTENER_INDEX)
-                g.drawText("L", path.getBounds(), Justification::centred);
+                g.drawText ("L", path.getBounds(), Justification::centred);
             else
-                g.drawText("S", path.getBounds(), Justification::centred);
+                g.drawText ("S", path.getBounds(), Justification::centred);
 
             /* Highlight the circle if it is currently active. */
             if (isActive)
             {
-                g.setColour(background.colours.activePath);
-                g.strokePath(path, PathStrokeType(2.0f));
+                g.setColour (background.colours.activePath);
+                g.strokePath (path, PathStrokeType (2.0f));
             }
         }
     }
@@ -130,17 +141,17 @@ class WfsXyPad    : public Component
     void resized() override
     {
         Rectangle<int> bounds = getLocalBounds();
-        background.setBounds(bounds);
+        background.setBounds (bounds);
 
         /* Make sure the circles don't go over the source pad edges. */
-        bounds.reduce(12, 12);
+        bounds.reduce (12, 12);
 
         plotArea = bounds;
         width = bounds.getWidth();
         height = bounds.getHeight();
     }
 
-    void mouseMove(const MouseEvent &event) override
+    void mouseMove (const MouseEvent& event) override
     {
         Point<int> pos = event.getPosition();
         int oldActiveElem = activeElem;
@@ -151,20 +162,24 @@ class WfsXyPad    : public Component
 
         for (int i = elements.size() - 1; i >= 0; --i)
         {
-            xySlidersAndColour handle =  elements.getReference(i);
+            xySlidersAndColour handle = elements.getReference (i);
 
             Range<double> xRange = handle.xSlider->getRange();
             Range<double> yRange = handle.ySlider->getRange();
 
-            float xPos = topLeftX + (handle.xSlider->getValue()-xRange.getStart()) * width / xRange.getLength();
-            float yPos = bottomY - (handle.ySlider->getValue()-yRange.getStart()) * height / yRange.getLength();
+            float xPos =
+                topLeftX
+                + (handle.xSlider->getValue() - xRange.getStart()) * width / xRange.getLength();
+            float yPos =
+                bottomY
+                - (handle.ySlider->getValue() - yRange.getStart()) * height / yRange.getLength();
 
             /* Limit listener position depending on arrangement type. */
             if (i == LISTENER_INDEX)
             {
                 if (background.loudspeakerArrangementType == LoudspeakerArrangementType::line)
                 {
-                    yPos = jmax(yPos, bottomY - height / 2);
+                    yPos = jmax (yPos, bottomY - height / 2);
                 }
                 else
                 {
@@ -172,7 +187,7 @@ class WfsXyPad    : public Component
                 }
             }
 
-            if (pos.getDistanceSquaredFrom(Point<float>(xPos, yPos).toInt()) < 80)
+            if (pos.getDistanceSquaredFrom (Point<float> (xPos, yPos).toInt()) < 80)
             {
                 activeElem = i;
                 break;
@@ -180,46 +195,63 @@ class WfsXyPad    : public Component
         }
 
         if (oldActiveElem != activeElem)
-            repaint(getLocalBounds());
+            repaint (getLocalBounds());
     }
 
-    void mouseDrag(const MouseEvent &event) override
+    void mouseDrag (const MouseEvent& event) override
     {
         Point<int> pos = event.getPosition() - plotArea.getTopLeft();
 
         if (activeElem != -1 && elements.size() - 1 >= activeElem)
         {
-            xySlidersAndColour handle =  elements.getReference(activeElem);
+            xySlidersAndColour handle = elements.getReference (activeElem);
             Range<double> xRange = handle.xSlider->getRange();
             Range<double> yRange = handle.ySlider->getRange();
 
-            handle.xSlider->setValue(xRange.getLength() * pos.x/width + xRange.getStart());
-            handle.ySlider->setValue(yRange.getLength() * (height - pos.y)/height + yRange.getStart());
+            handle.xSlider->setValue (xRange.getLength() * pos.x / width + xRange.getStart());
+            handle.ySlider->setValue (yRange.getLength() * (height - pos.y) / height
+                                      + yRange.getStart());
 
             /* TODO There's a dead zone without this call to repaint(). Why? */
-            repaint(getLocalBounds());
+            repaint (getLocalBounds());
         }
     }
 
-    void mouseUp (const MouseEvent &event) override
+    void mouseUp (const MouseEvent& event) override
     {
         activeElem = -1;
-        repaint(getLocalBounds());
+        repaint (getLocalBounds());
     }
 
-    void addElement(Slider& newXSlider, Slider& newYSlider, Colour newColour)
+    void addElement (Slider& newXSlider, Slider& newYSlider, Colour newColour)
     {
-        elements.add({&newXSlider, &newYSlider, newColour});
+        elements.add ({ &newXSlider, &newYSlider, newColour });
     }
 
     /* Setter functions for all loudspeaker parameters. */
-    void setZoom(float zoomToUse) { zoom = zoomToUse; background.zoom = zoomToUse; }
-    void setNLoudspeakers(int nLoudspeakersToUse) { background.nLoudspeakers = nLoudspeakersToUse; }
-    void setLoudspeakerArrayLength(float loudspeakerArrayLengthToUse) { background.loudspeakerArrayLength = loudspeakerArrayLengthToUse; }
-    void setLoudspeakerRadius(float loudspeakerRadiusToUse) { background.loudspeakerRadius = loudspeakerRadiusToUse; }
-    void setRotation(float rotationToUse) { background.rotation = rotationToUse; }
-    void setLoudspeakerArrangementType(LoudspeakerArrangementType loudspeakerArrangementTypeToUse) { background.loudspeakerArrangementType = loudspeakerArrangementTypeToUse; }
-    void setSourceRange(Range<float> newXRange, Range<float> newYRange)
+    void setZoom (float zoomToUse)
+    {
+        zoom = zoomToUse;
+        background.zoom = zoomToUse;
+    }
+    void setNLoudspeakers (int nLoudspeakersToUse)
+    {
+        background.nLoudspeakers = nLoudspeakersToUse;
+    }
+    void setLoudspeakerArrayLength (float loudspeakerArrayLengthToUse)
+    {
+        background.loudspeakerArrayLength = loudspeakerArrayLengthToUse;
+    }
+    void setLoudspeakerRadius (float loudspeakerRadiusToUse)
+    {
+        background.loudspeakerRadius = loudspeakerRadiusToUse;
+    }
+    void setRotation (float rotationToUse) { background.rotation = rotationToUse; }
+    void setLoudspeakerArrangementType (LoudspeakerArrangementType loudspeakerArrangementTypeToUse)
+    {
+        background.loudspeakerArrangementType = loudspeakerArrangementTypeToUse;
+    }
+    void setSourceRange (Range<float> newXRange, Range<float> newYRange)
     {
         xRangeWithZoom1 = newXRange;
         yRangeWithZoom1 = newYRange;
@@ -228,15 +260,12 @@ class WfsXyPad    : public Component
     }
 
     /* Repaint the WfsXyPadBackground if needed. */
-    void repaintBackground()
-    {
-        background.repaint(getLocalBounds());
-    }
+    void repaintBackground() { background.repaint (getLocalBounds()); }
 
     /* The colour definitions of the background are used in the WfsXyPad and the PluginEditor too. */
     WfsXyPadBackground::WfsXyPadColours& getColours() { return background.colours; }
 
-  protected:
+protected:
     /* The slider elements. representing source and listener positions. */
     Array<xySlidersAndColour> elements;
     int activeElem = -1;
@@ -246,7 +275,7 @@ class WfsXyPad    : public Component
     float width;
     float height;
 
-  private:
+private:
     /* The background of the WfsXyPad. */
     WfsXyPadBackground background;
 
