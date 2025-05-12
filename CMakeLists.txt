@@ -90,6 +90,16 @@ if(IEM_BUILD_VST3)
     list(APPEND FORMATS VST3)
 endif()
 
+if(IEM_BUILD_LV2)
+    message("-- IEM: Building LV2 versions")
+    list(APPEND FORMATS LV2)
+endif()
+
+if(IEM_BUILD_AAX)
+    message("-- IEM: Building AAX versions")
+    list(APPEND FORMATS AAX)
+endif()
+
 if(IEM_BUILD_STANDALONE)
     message("-- IEM: Building Standalone versions")
     list(APPEND FORMATS Standalone)
@@ -178,7 +188,12 @@ juce_add_plugin("${PROJECT_NAME}"
     PLUGIN_CODE WFSy                            # A unique four-character plugin id with at least one upper-case character
     FORMATS "${FORMATS}"
     VERSION "${VERSION}"
-    PRODUCT_NAME "${PROJECT_NAME}")        # The name of the final executable, which can differ from the target name
+    PRODUCT_NAME "${PROJECT_NAME}"              # This is the name of the plugin as it appears in the host
+    LV2URI "http://plugins.iem.at/WaveFieldSyntheisizer"
+    VST2_CATEGORY kPlugSurroundFx kPlugCategSpacializer
+    VST3_CATEGORIES Spatial Surround
+    AAX_CATEGORY SoundField
+)        
 
 include_directories(resources/ /usr/local/include)
 add_compile_definitions(DONT_SET_USING_JUCE_NAMESPACE=1
