@@ -19,7 +19,7 @@ variables:
 .artifacts:
   artifacts:
     paths:
-      # - VST3
+      - VST3
       - VST
       # - LV2
       - Standalone
@@ -257,9 +257,9 @@ windows:
   script:
     - unzip pluginval.zip
 
-    # - git clone --recursive https://github.com/steinbergmedia/vst3sdk.git
-    # - cmake vst3sdk -B vst3sdk/cmake-build
-    # - cmake --build vst3sdk/cmake-build --target validator
+    - git clone --recursive https://github.com/steinbergmedia/vst3sdk.git
+    - cmake vst3sdk -B vst3sdk/cmake-build
+    - cmake --build vst3sdk/cmake-build --target validator
 
     - rm -f failed-tests.txt
     - rm -rf test-logs
@@ -272,12 +272,12 @@ windows:
         cat $logfile
       done
 
-    # - |
-    #   find VST3/ -name "*.vst3" | while read fname; do
-    #     logfile="test-logs/${fname##*/}.txt"
-    #     ${PLUGINVAL} ${PLUGINVAL_ARGS} ${PLUGINVAL_ARGS_GUI} "$fname" >> ${logfile} || echo "${fname} failed with exit code $?" >> failed-tests.txt;
-    #     cat $logfile
-    #   done
+    - |
+      find VST3/ -name "*.vst3" | while read fname; do
+        logfile="test-logs/${fname##*/}.txt"
+        ${PLUGINVAL} ${PLUGINVAL_ARGS} ${PLUGINVAL_ARGS_GUI} "$fname" >> ${logfile} || echo "${fname} failed with exit code $?" >> failed-tests.txt;
+        cat $logfile
+      done
 
     - |
       if test -f failed-tests.txt; then
