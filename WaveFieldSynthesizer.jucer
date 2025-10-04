@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="mbpAgi" name="WaveFieldSynthesizer" displaySplashScreen="1"
+              reportAppUsage="0" splashScreenColour="Dark" projectType="audioplug"
+              version="0.1.0" bundleIdentifier="at.iem.WaveFieldSynthesizer"
+              includeBinaryInAppConfig="1" buildVST="1" buildVST3="1" buildAU="0"
+              buildAUv3="0" buildRTAS="0" buildAAX="1" buildStandalone="1"
+              enableIAA="0" pluginName="WaveFieldSynthesizer" pluginDesc="Wave Field Synthesis for line and circle arrays of loudspeakers"
+              pluginManufacturer="IEM" pluginManufacturerCode="IEMA" pluginCode="PlTe"
+              pluginChannelConfigs="" pluginIsSynth="0" pluginWantsMidiIn="0"
+              pluginProducesMidiOut="0" pluginIsMidiEffectPlugin="0" pluginEditorRequiresKeys="0"
+              pluginAUExportPrefix="WaveFieldSynthesizerAU" aaxIdentifier="at.iem.WaveFieldSynthesizer"
+              pluginAAXCategory="512" companyCopyright="IEM - Lukas Ignaz Maier, Michael Reiter"
+              companyName="IEM" companyWebsite="iem.at" headerPath="C:/Users/capoc/Repos/iem-wfs/Resources&#10;C:/SDKs/asiosdk/common&#10;&quot;C:/Program Files/JACK2/include&quot;"
+              pluginFormats="buildAAX,buildLV2,buildStandalone,buildVST,buildVST3"
+              defines="JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1&#10;JUCE_VST3_CAN_REPLACE_VST2 = 0&#10;JUCE_MODAL_LOOPS_PERMITTED=1&#10;JUCE_FORCE_WINRT_MIDI=1"
+              jucerFormatVersion="1" pluginVST3Category="Spatial" pluginVSTCategory="kPlugCategEffect"
+              lv2Uri="https://git.iem.at/audioplugins/iem-wfs" pluginCharacteristicsValue="pluginProducesMidiOut,pluginWantsMidiIn">
+  <MAINGROUP id="LpzrV9" name="WaveFieldSynthesizer">
+    <GROUP id="{1D84747B-688A-D8EE-CA1C-B97EE7888EBD}" name="OSC">
+      <FILE id="Vi9y24" name="OSCInputStream.h" compile="0" resource="0"
+            file="Resources/OSC/OSCInputStream.h"/>
+      <FILE id="fLrauH" name="OSCParameterInterface.cpp" compile="1" resource="0"
+            file="Resources/OSC/OSCParameterInterface.cpp"/>
+      <FILE id="CAf03V" name="OSCParameterInterface.h" compile="0" resource="0"
+            file="Resources/OSC/OSCParameterInterface.h"/>
+      <FILE id="me6hvz" name="OSCStatus.cpp" compile="1" resource="0" file="Resources/OSC/OSCStatus.cpp"/>
+      <FILE id="LBWBTw" name="OSCStatus.h" compile="0" resource="0" file="Resources/OSC/OSCStatus.h"/>
+      <FILE id="gLBDhS" name="OSCUtilities.h" compile="0" resource="0" file="Resources/OSC/OSCUtilities.h"/>
+    </GROUP>
+    <GROUP id="{5F6F019E-364F-4E0E-D417-D10E453FCA6A}" name="lookAndFeel">
+      <FILE id="iwfQWQ" name="IEM_LaF.h" compile="0" resource="0" file="Resources/lookAndFeel/IEM_LaF.h"/>
+      <FILE id="yDeA49" name="Roboto-Bold.ttf" compile="0" resource="1" file="Resources/lookAndFeel/Roboto-Bold.ttf"/>
+      <FILE id="ld6wgl" name="Roboto-Light.ttf" compile="0" resource="1"
+            file="Resources/lookAndFeel/Roboto-Light.ttf"/>
+      <FILE id="DHUjtV" name="Roboto-Medium.ttf" compile="0" resource="1"
+            file="Resources/lookAndFeel/Roboto-Medium.ttf"/>
+      <FILE id="tDVr6N" name="Roboto-Regular.ttf" compile="0" resource="1"
+            file="Resources/lookAndFeel/Roboto-Regular.ttf"/>
+    </GROUP>
+    <GROUP id="{F0F6055E-FA3A-1166-36DB-1EB545DAF660}" name="Standalone">
+      <FILE id="INBYj0" name="IEM_AudioDeviceSelectorComponent.cpp" compile="1"
+            resource="0" file="Resources/Standalone/IEM_AudioDeviceSelectorComponent.cpp"/>
+      <FILE id="fiw1ih" name="IEM_AudioDeviceSelectorComponent.h" compile="0"
+            resource="0" file="Resources/Standalone/IEM_AudioDeviceSelectorComponent.h"/>
+      <FILE id="iWy03Z" name="IEM_JackAudio.h" compile="0" resource="0" file="Resources/Standalone/IEM_JackAudio.h"/>
+      <FILE id="w9jiRx" name="IEMPluginSuiteSmall.png" compile="0" resource="1"
+            file="Resources/Standalone/IEMPluginSuiteSmall.png"/>
+      <FILE id="xxDfU4" name="MyStandaloneFilterWindow.h" compile="0" resource="0"
+            file="Resources/Standalone/MyStandaloneFilterWindow.h"/>
+      <FILE id="oet8Wn" name="StandaloneApp.cpp" compile="1" resource="0"
+            file="Resources/Standalone/StandaloneApp.cpp"/>
+    </GROUP>
+    <GROUP id="{508CBC88-3E2D-B197-3051-B94590C10F68}" name="Source">
+      <FILE id="utY8cH" name="WfsXyPadBackground.h" compile="0" resource="0"
+            file="Source/WfsXyPadBackground.h"/>
+      <FILE id="kf6cVl" name="WfsXyPad.h" compile="0" resource="0" file="Source/WfsXyPad.h"/>
+      <FILE id="SLgq9s" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <FILE id="Jc4gSH" name="PluginProcessor.h" compile="0" resource="0"
+            file="Source/PluginProcessor.h"/>
+      <FILE id="Zu7LI7" name="PluginEditor.cpp" compile="1" resource="0"
+            file="Source/PluginEditor.cpp"/>
+      <FILE id="Ur0OCo" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="OuOIYf" name="CustomUtilities.h" compile="0" resource="0"
+            file="Source/CustomUtilities.h"/>
+      <FILE id="JXSnO1" name="WfsSpeakerProcessor.cpp" compile="1" resource="0"
+            file="Source/WfsSpeakerProcessor.cpp"/>
+      <FILE id="lRtmYC" name="WfsSpeakerProcessor.h" compile="0" resource="0"
+            file="Source/WfsSpeakerProcessor.h"/>
+    </GROUP>
+  </MAINGROUP>
+  <EXPORTFORMATS>
+    <VS2017 targetFolder="Builds/VS2017Wfs" bigIcon="SZT7j9" smallIcon="SZT7j9">
+      <CONFIGURATIONS>
+        <CONFIGURATION name="Debug" winWarningLevel="4" generateManifest="1" winArchitecture="x64"
+                       isDebug="1" optimisation="1" targetName="WaveFieldSynthesizer"
+                       debugInformationFormat="ProgramDatabase" enablePluginBinaryCopyStep="0"/>
+        <CONFIGURATION name="Release 64bit" winWarningLevel="4" generateManifest="1"
+                       winArchitecture="x64" isDebug="0" optimisation="3" targetName="WaveFieldSynthesizer_x64"
+                       debugInformationFormat="ProgramDatabase" enablePluginBinaryCopyStep="0"
+                       linkTimeOptimisation="1"/>
+        <CONFIGURATION name="Release 32bit" winWarningLevel="4" generateManifest="1"
+                       winArchitecture="Win32" isDebug="0" optimisation="3" targetName="WaveFieldSynthesizer_win32"
+                       debugInformationFormat="ProgramDatabase" enablePluginBinaryCopyStep="0"
+                       linkTimeOptimisation="1"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_core" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_osc" path="../../../../../Applications/JUCE/modules"/>
+      </MODULEPATHS>
+    </VS2017>
+    <VS2019 targetFolder="Builds/VS2019Wfs">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" enablePluginBinaryCopyStep="1"/>
+        <CONFIGURATION isDebug="0" name="Release" enablePluginBinaryCopyStep="1"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_osc"/>
+        <MODULEPATH id="juce_opengl"/>
+        <MODULEPATH id="juce_gui_extra"/>
+        <MODULEPATH id="juce_gui_basics"/>
+        <MODULEPATH id="juce_graphics"/>
+        <MODULEPATH id="juce_events"/>
+        <MODULEPATH id="juce_dsp"/>
+        <MODULEPATH id="juce_data_structures"/>
+        <MODULEPATH id="juce_core"/>
+        <MODULEPATH id="juce_audio_utils"/>
+        <MODULEPATH id="juce_audio_processors"/>
+        <MODULEPATH id="juce_audio_plugin_client"/>
+        <MODULEPATH id="juce_audio_formats"/>
+        <MODULEPATH id="juce_audio_devices"/>
+        <MODULEPATH id="juce_audio_basics"/>
+      </MODULEPATHS>
+    </VS2019>
+    <VS2022 targetFolder="Builds/VisualStudio2022">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug"/>
+        <CONFIGURATION isDebug="0" name="Release"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_audio_devices" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_audio_formats" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_audio_processors" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_audio_utils" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_core" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_data_structures" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_dsp" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_events" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_graphics" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_gui_basics" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_gui_extra" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_opengl" path="C:\Program Files\JUCE\modules"/>
+        <MODULEPATH id="juce_osc" path="C:\Program Files\JUCE\modules"/>
+      </MODULEPATHS>
+    </VS2022>
+  </EXPORTFORMATS>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_plugin_client" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_dsp" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_opengl" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_osc" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+  <JUCEOPTIONS JUCE_QUICKTIME="disabled" JUCE_WEB_BROWSER="0" JUCE_USE_FLAC="0"
+               JUCE_USE_OGGVORBIS="0" JUCE_USE_MP3AUDIOFORMAT="0" JUCE_USE_LAME_AUDIO_FORMAT="0"
+               JUCE_USE_WINDOWS_MEDIA_FORMAT="0" JUCE_ASIO="1" JUCE_JACK="1"
+               JUCE_USE_WINRT_MIDI="1"/>
+  <LIVE_SETTINGS>
+    <OSX/>
+    <LINUX/>
+    <WINDOWS/>
+  </LIVE_SETTINGS>
+</JUCERPROJECT>
