@@ -1,7 +1,7 @@
 #  Intro about this repo
 This repository was imported from Gitlab (you can find it here: https://git.iem.at/audioplugins/iem-wfs ). The source code  was then written by the IEM Plug-in Suite Team, a 3D audio company (home page: https://plugins.iem.at / ).
 I simply adapted the code to make it compatible with the use of Juce 8.0.10 for producing plugins in VST3, VST2, AAX, and LV2 formats, and for using ASIO and Jack4Win drivers, all for Windows. The update was limited to a few changes to the Jucer file and some more significant changes to the "MyStandaloneFilterWindow.h" header.
-I used Windows 11, the asiosdk v2.3.3 of 2019-06-14, Jack2 installed on the system (I used version 1.9.x), i added the directories related to asio and jack to search for headers (check your directories and possibly correct the ones inserted in the Juce gui). I added from the Jucer gui also the preprocessor_definitions macros "JUCE_FORCE_WINRT_MIDI=1" and "JUCE_MODAL_LOOPS_PERMITTED=1".
+I used Windows 11, the asiosdk v2.3.3 of 2019-06-14, Jack2 installed on the system (i used version 1.9.x), added the directories related to asio and jack to search for headers (check your directories and possibly correct the ones inserted in the Juce gui). I added from the Jucer gui also the preprocessor_definitions macros "JUCE_FORCE_WINRT_MIDI=1" and "JUCE_MODAL_LOOPS_PERMITTED=1".
 Check Steinberg's guidelines for using/producing VST2. Also remember that to use AAX plugins, you must follow a specific procedure established by Avid, which requires Avid and iLok accounts, as well as the use of specific tools like iLok, AAX Validator, and Pro Tools Developer.
 
 #  Original Readme:
