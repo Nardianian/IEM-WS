@@ -1,4 +1,4 @@
-#  Intro about this repo
+#  Intro about this repository
 This repository was imported from Gitlab (you can find it here: https://git.iem.at/audioplugins/iem-wfs ). The source code  was then written by the IEM Plug-in Suite Team, a 3D audio company (home page: https://plugins.iem.at / ).
 I simply adapted the code to make it compatible with the use of Juce 8.0.10 for producing plugins in VST3, VST2, AAX, and LV2 formats, and for using ASIO and Jack4Win drivers, all for Windows. The update was limited to a few changes to the Jucer file and some more significant changes to the "MyStandaloneFilterWindow.h" header.
 I used Windows 11, the asiosdk v2.3.3 of 2019-06-14, Jack2 v1.9.x (Jack2 must be installed on the system), added the directories related to asio and jack to the search for headers Juce tab (check your directories and possibly correct the ones inserted from the Juce gui). I added also the preprocessor_definitions macros "JUCE_FORCE_WINRT_MIDI=1" and "JUCE_MODAL_LOOPS_PERMITTED=1" from the related Juce GUI tab.
