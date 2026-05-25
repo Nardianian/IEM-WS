@@ -3,6 +3,7 @@ This repository was imported from Gitlab (you can find it here: https://git.iem.
 I simply adapted the code to make it compatible with the use of Juce 8.0.10 for producing plugins in VST3, VST2, AAX, and LV2 formats, and for using ASIO and Jack4Win drivers, all for Windows. The update was limited to a few changes to the Jucer file and some more significant changes to the "MyStandaloneFilterWindow.h" header.
 I used Windows 11, the asiosdk v2.3.3 of 2019-06-14, Jack2 v1.9.x (Jack2 must be installed on the system), added the directories related to asio and jack to the search for headers Juce tab (check your directories and possibly correct the ones inserted from the Juce gui). I added also the preprocessor_definitions macros "JUCE_FORCE_WINRT_MIDI=1" and "JUCE_MODAL_LOOPS_PERMITTED=1" from the related Juce GUI tab.
 Check Steinberg's guidelines for using/producing VST2. Also remember that to use AAX plugins, you must activate it following a specific procedure established by Avid, which requires Avid and iLok accounts, as well as the use of specific tools like iLok, AAX Validator, and Pro Tools Developer.
+If you want compile by yourself it is preferable to further intervene on the code to avoid the use of flags to force WinRT and above all the use of JUCE_MODAL_LOOP using ASync calls since modal calls can interfere with communications with the host, causing glitches or interruptions in the DSP engine.
 
 #  Original Readme:
 
